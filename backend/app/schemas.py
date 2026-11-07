@@ -2,6 +2,7 @@
 
 from datetime import datetime
 from enum import Enum
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -37,6 +38,7 @@ class Report(BaseModel):
     recommended_actions: list[str]
     limitations: list[str]
     analysed_at: datetime
+    details: dict[str, Any] = Field(default_factory=dict)
 
 
 class UrlRequest(BaseModel):

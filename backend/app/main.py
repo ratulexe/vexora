@@ -5,6 +5,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .schemas import Classification, MessageRequest, Report, UrlRequest
+from .url_analysis.analyzer import analyze_url as run_url_analysis
 
 app = FastAPI(title="Vexora API")
 
@@ -36,8 +37,7 @@ def health() -> dict[str, str]:
 
 @app.post("/analyze/url", response_model=Report)
 def analyze_url(request: UrlRequest) -> Report:
-    # Person 1: block internal addresses (SSRF) before making any outbound request.
-    return placeholder_report(request.url, "URL analysis")
+    return run_url_analysis(request.url)
 
 
 @app.post("/analyze/message", response_model=Report)

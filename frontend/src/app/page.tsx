@@ -100,6 +100,16 @@ export default function Home() {
           <p>Evidence coverage: {report.confidence}</p>
           <p>Analysed: {new Date(report.analysed_at).toLocaleString()}</p>
 
+          {report.ai_summary && (
+            <div className={styles.aiSummary}>
+              <h3>AI explanation</h3>
+              <p>{report.ai_summary}</p>
+              <p className={styles.note}>
+                Written by AI from the findings below. The risk level is set by fixed rules, not by the AI.
+              </p>
+            </div>
+          )}
+
           <h3>Indicators</h3>
           {report.indicators.length === 0 ? (
             <p>None identified in the available checks. This does not prove it is safe.</p>

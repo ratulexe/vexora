@@ -6,6 +6,7 @@ domain. It is never treated as evidence that the site is safe.
 
 import socket
 import ssl
+import warnings
 from datetime import datetime, timezone
 
 from cryptography import x509
@@ -168,11 +169,18 @@ def _fetch_certificates(host: str, ip: str) -> tuple[x509.Certificate, list[x509
 
 def _load(item) -> x509.Certificate | None:
     try:
-        if isinstance(item, bytes):
-            return x509.load_der_x509_certificate(item)
-        return x509.load_der_x509_certificate(item.public_bytes(ssl._ssl.ENCODING_DER))
+        with warnings.catch_warnings():
+            # Some servers send certificates that break RFC 5280 rules; read them anyway.
+            warnings.simplefilter("ignore")
+            return _load_unchecked(item)
     except Exception:
         return None
+
+
+def _load_unchecked(item) -> x509.Certificate:
+    if isinstance(item, bytes):
+        return x509.load_der_x509_certificate(item)
+    return x509.load_der_x509_certificate(item.public_bytes(ssl._ssl.ENCODING_DER))
 
 
 def _describe(cert: x509.Certificate, host: str) -> dict:

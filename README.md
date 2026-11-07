@@ -49,7 +49,7 @@ TODO: add a screenshot of a report, saved as `docs/screenshot.png`, and link it 
 
 ```mermaid
 flowchart LR
-    User([User's browser]) -->|link or message| FE[Next.js frontend<br/>Vercel]
+    User([User browser]) -->|link or message| FE[Next.js frontend<br/>Vercel]
     FE -->|POST /analyze/url<br/>POST /analyze/message| API[FastAPI backend<br/>Render]
     FE -->|POST /reports| API
 

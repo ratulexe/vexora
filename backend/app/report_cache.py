@@ -4,8 +4,10 @@ they can contain personal details."""
 
 from .ai import add_ai_analysis, ai_enabled
 from .cache import TTLCache
+from .correlation import correlate, link_features
 from .schemas import Classification, Report
 from .url_analysis.analyzer import REPORT_CACHE_SECONDS, analyze_url_cached, mark_cached
+from .url_analysis.classify import RECOMMENDED_ACTIONS
 from .url_analysis.normalize import InvalidUrl, normalize_url
 
 FINAL_CACHE = TTLCache("final link reports", REPORT_CACHE_SECONDS)
@@ -20,7 +22,9 @@ def link_report(raw: str, refresh: bool = False) -> Report:
     if not refresh and (hit := FINAL_CACHE.get(key)):
         return mark_cached(hit[0], raw)
 
-    report = add_ai_analysis(analyze_url_cached(raw, refresh))
+    report = analyze_url_cached(raw, refresh)
+    report = correlate("link", key, link_features(report), report, RECOMMENDED_ACTIONS)
+    report = add_ai_analysis(report)
     if _worth_keeping(report):
         FINAL_CACHE.set(key, report)
     return report

@@ -48,6 +48,25 @@ class SecurityAssessment(BaseModel):
     limitations: list[str]
 
 
+class RelatedReport(BaseModel):
+    incident_id: str
+    kind: str
+    classification: str
+    first_seen: datetime
+    times_seen: int
+    links: list[str]
+    strong: bool
+
+
+class Correlation(BaseModel):
+    """Links to earlier suspicious reports (Module 4), found by exact matching."""
+
+    incident_id: str | None
+    related: list[RelatedReport]
+    strong_links: int
+    retention: str
+
+
 class Report(BaseModel):
     input: str
     classification: Classification
@@ -60,6 +79,7 @@ class Report(BaseModel):
     ai_summary: str | None = None
     from_cache: bool = False
     security_assessment: SecurityAssessment | None = None
+    correlation: Correlation | None = None
 
 
 class UrlRequest(BaseModel):

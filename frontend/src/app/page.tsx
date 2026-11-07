@@ -157,6 +157,30 @@ export default function Home() {
             ))}
           </ul>
 
+          {report.correlation && report.correlation.related.length > 0 && (
+            <section className={styles.securitySection}>
+              <h3>Related reports</h3>
+              <p className={styles.note}>
+                Earlier suspicious reports that share something with this one. Connections come from exact matches,
+                not from the AI.
+              </p>
+              <ul>
+                {report.correlation.related.map((related) => (
+                  <li key={related.incident_id}>
+                    <strong>
+                      {related.strong ? "Strong link" : "Possible link"}: {related.classification} {related.kind} report
+                    </strong>{" "}
+                    (first seen {new Date(related.first_seen).toLocaleString()}
+                    {related.times_seen > 1 ? `, reported ${related.times_seen} times` : ""})
+                    <br />
+                    {related.links.join("; ")}
+                  </li>
+                ))}
+              </ul>
+              <p className={styles.note}>{report.correlation.retention}</p>
+            </section>
+          )}
+
           {report.security_assessment && (
             <section className={styles.securitySection}>
               <h3>Website security</h3>

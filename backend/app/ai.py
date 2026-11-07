@@ -21,6 +21,7 @@ import anthropic
 from pydantic import BaseModel, ValidationError
 
 from .message_analysis.extract import redact
+from .rate_limit import AI_CALLS
 from .schemas import Report, Severity
 from .url_analysis.common import indicator
 
@@ -123,6 +124,10 @@ def add_ai_analysis(report: Report, message: str | None = None) -> Report:
     """Adds an AI summary (and, for messages, grounded tactics) to a finished report."""
     if not ai_enabled():
         report.limitations.append("AI explanation is not configured on this server.")
+        return report
+
+    if not AI_CALLS.allow("all visitors"):
+        report.limitations.append("AI explanation paused: the hourly limit for AI calls has been reached.")
         return report
 
     redacted = redact(message) if message else None

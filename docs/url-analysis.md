@@ -68,6 +68,7 @@ In testing, a repeat check of `github.com` took 0.00 seconds instead of 6.7 seco
 
 - **SSRF protection:** every hop is checked before connecting. On NAT64 networks (common on mobile data), the IPv4 address inside a `64:ff9b::/96` address is checked instead. Only http and https on ports 80 and 443 are allowed, and every resolved address must be public, so loopback, private, link-local, cloud metadata and IPv4-mapped IPv6 addresses are all refused. Requests connect to the IP that was checked, so DNS cannot switch to an internal address mid-request.
 - **No content execution:** Vexora never reads page bodies, runs scripts or downloads files. Requests have a 5-second timeout and a 15-second budget for the whole redirect chain.
+- **Rate limits** (`app/rate_limit.py`): each visitor can run 30 link checks and 20 message checks every 10 minutes, and register 5 reports every 10 minutes. AI explanations share a budget of 200 calls an hour across all visitors; past that, reports are still returned without the AI explanation. Visitors are identified by Cloudflare's `CF-Connecting-IP` header, which they cannot forge through Cloudflare.
 - **Privacy:** submitted URLs are sent to the configured threat intelligence services and the domain to RDAP and crt.sh. Nothing else leaves the server.
 
 ## Limitations

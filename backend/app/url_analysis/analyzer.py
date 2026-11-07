@@ -11,6 +11,7 @@ from .domain_checks import BRANDS, check_domain
 from .domain_intel import check_certificate_transparency, check_domain_age
 from .normalize import InvalidUrl, NormalizedUrl, normalize_url
 from .safe_fetch import REDIRECT_STATUSES, FetchResult, fetch_redirect_chain
+from .security_assessment import assess
 from .threat_intel import check_threat_intel
 from .tls_check import check_tls
 
@@ -63,6 +64,7 @@ def analyze_url(raw: str) -> Report:
     checks: list[CheckResult] = [check_domain(url)]
     limitations: list[str] = []
     site_reached = False
+    security = None
 
     with ThreadPoolExecutor(max_workers=6) as pool:
         intel_future = pool.submit(check_threat_intel, url)
@@ -80,11 +82,20 @@ def analyze_url(raw: str) -> Report:
             fetch = fetch_future.result()
             redirect_check, final = analyze_redirects(url, fetch)
             site_reached = fetch.final_status is not None
-            checks += [redirect_check, tls_future.result()]
+            tls_result = tls_future.result()
+            checks += [redirect_check, tls_result]
+
+            # Does the plain-HTTP address redirect to HTTPS? (Module 5)
+            http_future = None
+            if site_reached and final and final.scheme == "https" and not final.is_ip:
+                http_future = pool.submit(fetch_redirect_chain, f"http://{final.host}/")
 
             if final and final.registered_domain != url.registered_domain:
                 checks.append(check_domain(final, prefix="Final destination: "))
-                checks.append(check_tls(final.host, prefix="Final destination: "))
+                tls_result = check_tls(final.host, prefix="Final destination: ")
+                checks.append(tls_result)
+
+            security = assess(fetch, tls_result, http_future.result() if http_future else None)
 
         checks.append(intel.check)
         checks.append(age_future.result())
@@ -109,6 +120,7 @@ def analyze_url(raw: str) -> Report:
         limitations=list(dict.fromkeys(limitations + GENERAL_LIMITATIONS)),
         analysed_at=analysed_at,
         details=details,
+        security_assessment=security,
     )
 
 

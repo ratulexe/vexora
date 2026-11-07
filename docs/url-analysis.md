@@ -20,6 +20,31 @@ How Vexora investigates a submitted link (Modules 1 and 2 of the problem stateme
 | Inconclusive | No warning signs, but the site could not be reached or no threat source was available |
 | Low Risk | No warning signs and all core checks ran. This never means "safe". |
 
+## Website security assessment (Module 5)
+
+`security_assessment.py` checks how well the final page protects its visitors, using only what the site already sends: response headers and TLS details. Its findings are shown in their own **Website security** section and **never change the risk classification**, because a missing header is a configuration weakness, not a sign of fraud.
+
+| Check | Severity if missing or weak |
+|---|---|
+| Page served over plain HTTP | High |
+| HSTS header (and a lifetime of at least 180 days) | Medium (Low if too short) |
+| HTTP address redirects to HTTPS | Medium |
+| Content-Security-Policy | Medium |
+| Clickjacking protection (X-Frame-Options or CSP frame-ancestors) | Medium |
+| Server accepts TLS 1.0/1.1 | Medium |
+| X-Content-Type-Options: nosniff | Low |
+| Referrer-Policy | Low |
+| Cookie flags (Secure, HttpOnly, SameSite) | Low |
+| Software version disclosed in Server or X-Powered-By | Low |
+
+Each finding has the issue, technical evidence, potential impact, severity and recommended fix. The section also lists the checks that passed, and its limitations: hidden files and endpoints are not probed, page content is not read (so mixed content is not checked), and known vulnerabilities are not looked up.
+
+It also gives the certificate verdict Module 2 asks for: **Valid**, **Suspicious**, **Potentially compromised** (a distrusted CA), **HTTPS not available**, or **Not used** when the page is plain HTTP. A valid certificate never means the site is genuine.
+
+Certificates are checked against Mozilla's root store (`certifi`), so trust decisions match browsers on every operating system.
+
+Live results on 7 November 2026: GitHub had one Low finding (a cookie without HttpOnly). Google had 7, including no HSTS, plain HTTP served without a redirect, and TLS 1.0/1.1 accepted. `example.com` had 7 and stayed Low Risk.
+
 ## Caching
 
 Results are kept in memory for a limited time, then checked again, because threats change: a safe site can be hacked, and a phishing site can be taken down. Everything is cleared when the server restarts.
@@ -41,7 +66,7 @@ In testing, a repeat check of `github.com` took 0.00 seconds instead of 6.7 seco
 
 ## Safety
 
-- **SSRF protection:** every hop is checked before connecting. Only http and https on ports 80 and 443 are allowed, and every resolved address must be public, so loopback, private, link-local, cloud metadata and IPv4-mapped IPv6 addresses are all refused. Requests connect to the IP that was checked, so DNS cannot switch to an internal address mid-request.
+- **SSRF protection:** every hop is checked before connecting. On NAT64 networks (common on mobile data), the IPv4 address inside a `64:ff9b::/96` address is checked instead. Only http and https on ports 80 and 443 are allowed, and every resolved address must be public, so loopback, private, link-local, cloud metadata and IPv4-mapped IPv6 addresses are all refused. Requests connect to the IP that was checked, so DNS cannot switch to an internal address mid-request.
 - **No content execution:** Vexora never reads page bodies, runs scripts or downloads files. Requests have a 5-second timeout and a 15-second budget for the whole redirect chain.
 - **Privacy:** submitted URLs are sent to the configured threat intelligence services and the domain to RDAP and crt.sh. Nothing else leaves the server.
 
@@ -70,4 +95,4 @@ Run on 7 November 2026 against live sites, with OpenPhish as the only threat sou
 | Suspicious | `http://127.0.0.1/admin` | Suspicious | Medium: internal address, blocked without connecting |
 | Malicious | A URL from the OpenPhish feed | Confirmed Malicious | Critical: listed as active phishing; site not contacted |
 
-Automated tests: `cd backend && pytest` runs 64 offline tests covering normalisation, phishing patterns, benign look-alikes (to catch false positives), SSRF blocking, certificate parsing, distrusted-CA dates, classification rules and the API.
+Automated tests: `cd backend && pytest` runs the offline test suite (120 tests as of the website security assessment) covering normalisation, phishing patterns, benign look-alikes (to catch false positives), SSRF blocking, certificate parsing, distrusted-CA dates, classification rules and the API.

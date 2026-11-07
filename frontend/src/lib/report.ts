@@ -16,6 +16,22 @@ export interface Indicator {
   source: string;
 }
 
+export interface SecurityFinding {
+  issue: string;
+  severity: Severity;
+  evidence: string;
+  impact: string;
+  remediation: string;
+}
+
+export interface SecurityAssessment {
+  url: string;
+  tls_verdict: string;
+  findings: SecurityFinding[];
+  passed: string[];
+  limitations: string[];
+}
+
 export interface Report {
   input: string;
   classification: Classification;
@@ -27,4 +43,5 @@ export interface Report {
   details?: Record<string, unknown>;
   ai_summary?: string | null;
   from_cache?: boolean;
+  security_assessment?: SecurityAssessment | null;
 }

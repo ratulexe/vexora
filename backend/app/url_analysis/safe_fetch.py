@@ -21,6 +21,19 @@ TOTAL_BUDGET_SECONDS = 15
 TIMEOUT = httpx.Timeout(5.0)
 USER_AGENT = "Mozilla/5.0 (compatible; VexoraScanner/0.1; +https://github.com/ratulexe/vexora)"
 REDIRECT_STATUSES = {301, 302, 303, 307, 308}
+NAT64_PREFIX = ipaddress.ip_network("64:ff9b::/96")
+# Response headers kept for the website security assessment. Page content is never read.
+SECURITY_HEADERS = (
+    "strict-transport-security",
+    "content-security-policy",
+    "x-frame-options",
+    "x-content-type-options",
+    "referrer-policy",
+    "permissions-policy",
+    "server",
+    "x-powered-by",
+    "x-aspnet-version",
+)
 
 
 class BlockedDestination(Exception):
@@ -33,8 +46,13 @@ class DnsFailure(Exception):
 
 def is_public_address(ip: str) -> bool:
     address = ipaddress.ip_address(ip.split("%")[0])
-    if isinstance(address, ipaddress.IPv6Address) and address.ipv4_mapped:
-        address = address.ipv4_mapped
+    if isinstance(address, ipaddress.IPv6Address):
+        if address.ipv4_mapped:
+            address = address.ipv4_mapped
+        elif address in NAT64_PREFIX:
+            # NAT64 networks (common on mobile data) wrap IPv4 addresses in IPv6.
+            # Judge the wrapped IPv4 address, so internal targets stay blocked.
+            address = ipaddress.IPv4Address(int(address) & 0xFFFFFFFF)
     return address.is_global and not (
         address.is_multicast
         or address.is_reserved
@@ -65,6 +83,8 @@ class Hop:
     status: int | None
     ip: str
     location: str | None = None
+    headers: dict[str, str] = field(default_factory=dict)
+    cookies: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -121,10 +141,10 @@ def fetch_redirect_chain(url: str) -> FetchResult:
 
             try:
                 try:
-                    status, location = _request_pinned(client, current, scheme, host, port, ip)
+                    status, location, headers, cookies = _request_pinned(client, current, scheme, host, port, ip)
                 except (httpx.ConnectError, httpx.ReadError):
                     # One retry: flaky networks sometimes drop the first connection.
-                    status, location = _request_pinned(client, current, scheme, host, port, ip)
+                    status, location, headers, cookies = _request_pinned(client, current, scheme, host, port, ip)
             except httpx.TimeoutException:
                 result.error = f"Timed out connecting to {host}"
                 return result
@@ -132,7 +152,9 @@ def fetch_redirect_chain(url: str) -> FetchResult:
                 result.error = f"Could not connect to {host} ({type(error).__name__})"
                 return result
 
-            result.hops.append(Hop(url=current, status=status, ip=ip, location=location))
+            result.hops.append(
+                Hop(url=current, status=status, ip=ip, location=location, headers=headers, cookies=cookies)
+            )
             if status in REDIRECT_STATUSES and location:
                 current = urljoin(current, location)
                 continue
@@ -147,7 +169,7 @@ def fetch_redirect_chain(url: str) -> FetchResult:
 
 def _request_pinned(
     client: httpx.Client, url: str, scheme: str, host: str, port: int, ip: str
-) -> tuple[int, str | None]:
+) -> tuple[int, str | None, dict[str, str], list[str]]:
     parts = urlsplit(url)
     ip_netloc = f"[{ip}]" if ":" in ip else ip
     default_port = 443 if scheme == "https" else 80
@@ -164,6 +186,8 @@ def _request_pinned(
     )
     response = client.send(request, stream=True)
     try:
-        return response.status_code, response.headers.get("location")
+        headers = {name: response.headers[name] for name in SECURITY_HEADERS if name in response.headers}
+        cookies = response.headers.get_list("set-cookie")
+        return response.status_code, response.headers.get("location"), headers, cookies
     finally:
         response.close()

@@ -22,7 +22,8 @@ def fake_network(monkeypatch, confirmed=False, fetch=None):
     calls = {"fetch": 0}
 
     def fetch_chain(url):
-        calls["fetch"] += 1
+        if not url.startswith("http://"):
+            calls["fetch"] += 1
         return fetch or FetchResult(hops=[Hop(url=url, status=200, ip="93.184.215.14")], final_url=url, final_status=200)
 
     monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)

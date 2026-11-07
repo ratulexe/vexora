@@ -20,6 +20,25 @@ How Vexora investigates a submitted link (Modules 1 and 2 of the problem stateme
 | Inconclusive | No warning signs, but the site could not be reached or no threat source was available |
 | Low Risk | No warning signs and all core checks ran. This never means "safe". |
 
+## Caching
+
+Results are kept in memory for a limited time, then checked again, because threats change: a safe site can be hacked, and a phishing site can be taken down. Everything is cleared when the server restarts.
+
+| What | Kept for | Why |
+|---|---|---|
+| Finished link reports, including the AI explanation | 30 minutes | Repeat checks are instant and do not spend AI credit |
+| Domain age (RDAP) | 24 hours | A registration date does not change |
+| Certificate Transparency history | 6 hours | Changes slowly, and crt.sh is often slow |
+| TLS certificate details | 1 hour | Certificates can be replaced at any time |
+| OpenPhish feed | 30 minutes | Matches the feed's update pace |
+
+- Links that differ only in how they were typed (`github.com`, `https://GITHUB.com/`) share one result.
+- Failed checks and Inconclusive results are never kept, so they are retried. A report whose AI explanation failed is not kept either.
+- Reused reports keep their original analysis time and are marked as saved, with a **Re-check now** button that bypasses the cache.
+- Pasted messages are never stored, because they can contain personal details. Links found inside them reuse saved link reports.
+
+In testing, a repeat check of `github.com` took 0.00 seconds instead of 6.7 seconds.
+
 ## Safety
 
 - **SSRF protection:** every hop is checked before connecting. Only http and https on ports 80 and 443 are allowed, and every resolved address must be public, so loopback, private, link-local, cloud metadata and IPv4-mapped IPv6 addresses are all refused. Requests connect to the IP that was checked, so DNS cannot switch to an internal address mid-request.

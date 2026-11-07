@@ -3,6 +3,7 @@
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 
+from ..cache import TTLCache
 from ..schemas import Classification, Report, Severity
 from .classify import RECOMMENDED_ACTIONS, classify, evidence_coverage, sort_indicators
 from .common import CheckResult, indicator
@@ -14,10 +15,34 @@ from .threat_intel import check_threat_intel
 from .tls_check import check_tls
 
 SOURCE = "Vexora redirect analysis"
+REPORT_CACHE_SECONDS = 30 * 60
+REPORT_CACHE = TTLCache("link reports", REPORT_CACHE_SECONDS)
+
 GENERAL_LIMITATIONS = [
     "Automated checks cannot prove that a site is safe.",
     "Page content, scripts and JavaScript or meta-refresh redirects are not analysed.",
 ]
+
+
+def analyze_url_cached(raw: str, refresh: bool = False) -> Report:
+    """analyze_url, reusing a result from the last 30 minutes for the same normalised link."""
+    try:
+        key = normalize_url(raw).url
+    except InvalidUrl:
+        return analyze_url(raw)
+    if not refresh and (hit := REPORT_CACHE.get(key)):
+        return mark_cached(hit[0], raw)
+    report = analyze_url(raw)
+    # Inconclusive usually means a check failed, so try again next time.
+    if report.classification != Classification.INCONCLUSIVE:
+        REPORT_CACHE.set(key, report)
+    return report
+
+
+def mark_cached(report: Report, raw: str) -> Report:
+    report.input = raw
+    report.from_cache = True
+    return report
 
 
 def analyze_url(raw: str) -> Report:

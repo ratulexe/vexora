@@ -6,7 +6,7 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 
 from ..schemas import Classification, Indicator, Report, Severity
-from ..url_analysis.analyzer import analyze_url
+from ..url_analysis.analyzer import analyze_url_cached as analyze_url
 from ..url_analysis.classify import classify, sort_indicators
 from ..url_analysis.common import indicator
 from ..url_analysis.domain_checks import BRANDS

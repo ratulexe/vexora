@@ -9,6 +9,8 @@ from urllib.parse import urlsplit
 
 import httpx
 
+from ..registry import chain as registry_chain
+from ..registry.package import indicator_hash
 from ..schemas import Severity
 from .common import CheckResult, indicator
 from .normalize import NormalizedUrl
@@ -31,7 +33,7 @@ class ThreatIntelResult:
 
 def check_threat_intel(url: NormalizedUrl) -> ThreatIntelResult:
     result = ThreatIntelResult(check=CheckResult(name="Threat intelligence", completed=False))
-    for lookup in (_openphish, _urlhaus, _safe_browsing):
+    for lookup in (_openphish, _urlhaus, _safe_browsing, _vexora_registry):
         name, status = lookup(url, result)
         result.sources[name] = status
         if status in ("match", "no match", "host reported"):
@@ -41,7 +43,7 @@ def check_threat_intel(url: NormalizedUrl) -> ThreatIntelResult:
 
     not_configured = [name for name, status in result.sources.items() if status == "not configured"]
     if not_configured:
-        result.check.limitations.append(f"Not configured (no API key): {', '.join(not_configured)}.")
+        result.check.limitations.append(f"Not configured on this server: {', '.join(not_configured)}.")
     result.check.completed = result.any_source_available
     result.check.details = {"sources": result.sources}
     if result.any_source_available and not result.check.indicators:
@@ -178,3 +180,26 @@ def _safe_browsing(url: NormalizedUrl, result: ThreatIntelResult) -> tuple[str, 
         )
         return name, "match"
     return name, "no match"
+
+
+def _vexora_registry(url: NormalizedUrl, result: ThreatIntelResult) -> tuple[str, str]:
+    """Earlier Vexora reports about this domain, read from the on-chain registry."""
+    name = "Vexora threat registry"
+    if url.is_ip or not registry_chain.registry_configured():
+        return name, "not configured"
+    try:
+        count = registry_chain.report_count_for(indicator_hash(url.registered_domain))
+    except registry_chain.RegistryUnavailable as error:
+        return name, str(error).rstrip(".")
+    if not count:
+        return name, "no match"
+    result.check.indicators.append(
+        indicator(
+            "Previously reported in the Vexora threat registry",
+            Severity.MEDIUM,
+            f"{url.registered_domain} appears in {count} registered report(s) on-chain. Community reports are "
+            "integrity-protected but not independently verified.",
+            name,
+        )
+    )
+    return name, "host reported"

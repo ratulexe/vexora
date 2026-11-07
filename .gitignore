@@ -30,3 +30,7 @@ Thumbs.db
 
 # Local tool settings
 .claude/
+
+# Local blockchain deployments (Sepolia deployments are committed as evidence)
+contracts/deployments/localhost.json
+contracts/deployments/hardhat.json

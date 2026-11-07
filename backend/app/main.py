@@ -5,6 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from .ai import add_ai_analysis
 from .message_analysis.analyzer import analyze_message as run_message_analysis
+from .registry.api import router as registry_router
 from .schemas import MessageRequest, Report, UrlRequest
 from .url_analysis.analyzer import analyze_url as run_url_analysis
 
@@ -16,6 +17,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.include_router(registry_router)
 
 
 @app.get("/health")

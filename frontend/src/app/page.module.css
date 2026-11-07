@@ -1,0 +1,80 @@
+.main {
+  width: 100%;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 48px 16px;
+  font-family: var(--font-geist-sans);
+}
+
+.main h1 {
+  font-size: 36px;
+  margin-bottom: 8px;
+}
+
+.intro {
+  margin-bottom: 24px;
+  line-height: 1.5;
+}
+
+.tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.tabs button,
+.form button {
+  padding: 10px 16px;
+  border: 1px solid currentColor;
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.tabs button[aria-pressed="true"],
+.form button {
+  background: var(--foreground);
+  color: var(--background);
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.form input,
+.form textarea {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid currentColor;
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+}
+
+.form button:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.error {
+  margin-top: 16px;
+  color: #d92d20;
+}
+
+.report {
+  margin-top: 32px;
+  line-height: 1.5;
+}
+
+.report h3 {
+  margin-top: 20px;
+}
+
+.report ul {
+  padding-left: 20px;
+}

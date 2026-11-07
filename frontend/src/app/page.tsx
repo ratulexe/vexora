@@ -45,7 +45,7 @@ export default function Home() {
 
   return (
     <main className={styles.main}>
-      <h1>LinkShield</h1>
+      <h1>Sentrace</h1>
       <p className={styles.intro}>
         Check a suspicious link or message and see the evidence. Never enter passwords, OTPs or
         private keys here.

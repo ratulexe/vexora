@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from .schemas import Classification, MessageRequest, Report, UrlRequest
 
-app = FastAPI(title="LinkShield API")
+app = FastAPI(title="Sentrace API")
 
 app.add_middleware(
     CORSMiddleware,

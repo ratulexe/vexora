@@ -1,6 +1,6 @@
-# LinkShield
+# Sentrace
 
-LinkShield investigates suspicious links and messages, explains the evidence, and records tamper-evident threat reports on-chain.
+Sentrace investigates suspicious links and messages, explains the evidence, and records tamper-evident threat reports on-chain.
 
 ## Problem
 
@@ -8,7 +8,7 @@ Phishing sites, fraudulent payment links and scam messages can closely imitate t
 
 ## Solution
 
-Anyone can submit a URL, domain, email or message. LinkShield runs security checks, explains the findings in plain language, and gives a risk classification with its evidence, sources and limitations. Users can then register a cryptographic commitment to a threat report on-chain, so anyone can check that it has not been altered.
+Anyone can submit a URL, domain, email or message. Sentrace runs security checks, explains the findings in plain language, and gives a risk classification with its evidence, sources and limitations. Users can then register a cryptographic commitment to a threat report on-chain, so anyone can check that it has not been altered.
 
 A blockchain record proves a report's integrity and history, not that the report is true. A valid TLS certificate, or the absence of known threats, is never treated as proof that a site is safe.
 

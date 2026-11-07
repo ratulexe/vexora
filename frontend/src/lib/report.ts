@@ -26,4 +26,5 @@ export interface Report {
   analysed_at: string;
   details?: Record<string, unknown>;
   ai_summary?: string | null;
+  from_cache?: boolean;
 }

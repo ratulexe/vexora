@@ -17,8 +17,12 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  async function handleSubmit(event: FormEvent) {
+  function handleSubmit(event: FormEvent) {
     event.preventDefault();
+    void runAnalysis(false);
+  }
+
+  async function runAnalysis(refresh: boolean) {
     setLoading(true);
     setError(null);
     setReport(null);
@@ -27,7 +31,7 @@ export default function Home() {
       const response = await fetch(`${API_URL}/analyze/${mode}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ [mode]: value }),
+        body: JSON.stringify(mode === "url" ? { url: value, refresh } : { message: value }),
       });
       if (!response.ok) throw new Error(`Request failed (${response.status})`);
       setReport(await response.json());
@@ -101,6 +105,15 @@ export default function Home() {
           <h2>{report.classification}</h2>
           <p>Evidence coverage: {report.confidence}</p>
           <p>Analysed: {new Date(report.analysed_at).toLocaleString()}</p>
+          {report.from_cache && (
+            <p className={styles.note}>
+              Saved result from {minutesAgo(report.analysed_at)}. Results for the same link are reused for 30
+              minutes.{" "}
+              <button type="button" className={styles.linkButton} onClick={() => void runAnalysis(true)} disabled={loading}>
+                {loading ? "Checking again..." : "Re-check now"}
+              </button>
+            </p>
+          )}
 
           {report.ai_summary && (
             <div className={styles.aiSummary}>
@@ -155,4 +168,9 @@ export default function Home() {
       )}
     </main>
   );
+}
+
+function minutesAgo(iso: string): string {
+  const minutes = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 60000));
+  return minutes < 1 ? "less than a minute ago" : minutes === 1 ? "1 minute ago" : `${minutes} minutes ago`;
 }

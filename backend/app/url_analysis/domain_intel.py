@@ -8,6 +8,7 @@ from datetime import datetime, timedelta, timezone
 
 import httpx
 
+from ..cache import TTLCache, cache_completed_checks
 from ..schemas import Severity
 from .common import CheckResult, indicator
 from .distrusted_cas import find_distrusted
@@ -17,7 +18,12 @@ RDAP_URL = "https://rdap.org/domain/{domain}"
 CRT_SH_URL = "https://crt.sh/"
 MAX_CT_BYTES = 3_000_000
 
+# A registration date does not change; certificate history changes slowly.
+DOMAIN_AGE_CACHE = TTLCache("domain age", 24 * 3600)
+CT_CACHE = TTLCache("certificate transparency", 6 * 3600)
 
+
+@cache_completed_checks(DOMAIN_AGE_CACHE, key=lambda url: url.registered_domain)
 def check_domain_age(url: NormalizedUrl) -> CheckResult:
     result = CheckResult(name="Domain age", completed=False)
     if url.is_ip or url.obfuscated_ip or not url.suffix:
@@ -78,6 +84,7 @@ def _event_date(data: dict, action: str) -> datetime | None:
     return None
 
 
+@cache_completed_checks(CT_CACHE, key=lambda url: url.host)
 def check_certificate_transparency(url: NormalizedUrl) -> CheckResult:
     result = CheckResult(name="Certificate Transparency", completed=False)
     if url.is_ip or url.obfuscated_ip:

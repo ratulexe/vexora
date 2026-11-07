@@ -13,6 +13,7 @@ from cryptography import x509
 from cryptography.hazmat.primitives.asymmetric import dsa, ec, rsa
 from cryptography.x509.oid import ExtensionOID, NameOID
 
+from ..cache import TTLCache, cache_completed_checks
 from ..schemas import Severity
 from .common import CheckResult, indicator
 from .distrusted_cas import find_distrusted
@@ -20,6 +21,8 @@ from .safe_fetch import BlockedDestination, DnsFailure, resolve_public_ips
 
 SOURCE = "Vexora TLS analysis"
 TIMEOUT_SECONDS = 6
+# Certificates rarely change, but can be replaced at any time, so keep this short.
+TLS_CACHE = TTLCache("tls", 3600)
 
 VERIFY_PROBLEMS = {
     10: ("Certificate has expired", "The certificate is past its expiry date."),
@@ -32,6 +35,7 @@ VERIFY_PROBLEMS = {
 }
 
 
+@cache_completed_checks(TLS_CACHE, key=lambda host, prefix="": (host.lower(), prefix))
 def check_tls(host: str, prefix: str = "") -> CheckResult:
     result = CheckResult(name=f"{prefix}TLS certificate", completed=False)
 

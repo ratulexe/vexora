@@ -40,10 +40,12 @@ class Report(BaseModel):
     analysed_at: datetime
     details: dict[str, Any] = Field(default_factory=dict)
     ai_summary: str | None = None
+    from_cache: bool = False
 
 
 class UrlRequest(BaseModel):
     url: str = Field(min_length=1, max_length=2048)
+    refresh: bool = False  # Ignore any saved result and check again
 
 
 class MessageRequest(BaseModel):

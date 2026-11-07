@@ -106,7 +106,7 @@ export default function Home() {
           ) : (
             <ul>
               {report.indicators.map((indicator) => (
-                <li key={indicator.title}>
+                <li key={`${indicator.title}-${indicator.evidence}`}>
                   <strong>
                     {indicator.severity}: {indicator.title}
                   </strong>
@@ -130,6 +130,13 @@ export default function Home() {
               <li key={limitation}>{limitation}</li>
             ))}
           </ul>
+
+          {report.details && Object.keys(report.details).length > 0 && (
+            <details className={styles.details}>
+              <summary>Technical details</summary>
+              <pre>{JSON.stringify(report.details, null, 2)}</pre>
+            </details>
+          )}
         </section>
       )}
     </main>

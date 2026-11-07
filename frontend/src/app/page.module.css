@@ -78,3 +78,15 @@
 .report ul {
   padding-left: 20px;
 }
+
+.details {
+  margin-top: 20px;
+}
+
+.details pre {
+  overflow-x: auto;
+  padding: 12px;
+  border: 1px solid currentColor;
+  border-radius: 8px;
+  font-size: 13px;
+}

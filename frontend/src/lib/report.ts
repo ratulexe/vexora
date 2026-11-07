@@ -24,4 +24,5 @@ export interface Report {
   recommended_actions: string[];
   limitations: string[];
   analysed_at: string;
+  details?: Record<string, unknown>;
 }

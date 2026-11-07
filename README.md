@@ -26,7 +26,11 @@ TODO: add a screenshot.
 - Frontend: Next.js, TypeScript
 - Backend: Python, FastAPI
 - Blockchain: Solidity, Hardhat, EVM testnet
-- TODO: AI provider, threat intelligence sources and database
+- Threat intelligence: OpenPhish community feed, with optional URLhaus and Google Safe Browsing
+- Domain intelligence: RDAP (rdap.org) and Certificate Transparency logs (crt.sh)
+- TODO: AI provider and database
+
+See [docs/url-analysis.md](docs/url-analysis.md) for the URL analysis pipeline, safety measures and test results.
 
 ## Architecture
 
@@ -75,9 +79,10 @@ npm test
 
 ## Disclosures
 
-- Libraries: FastAPI, Pydantic, Uvicorn, pytest, Next.js, React, Hardhat, Hardhat Toolbox
+- Libraries: FastAPI, Pydantic, Uvicorn, HTTPX, idna, tldextract, cryptography, pytest, Next.js, React, Hardhat, Hardhat Toolbox
+- Data sources: OpenPhish community feed, URLhaus, Google Safe Browsing, RDAP, crt.sh
 - Templates: `create-next-app` for the frontend
-- AI tools: Claude Code was used to generate the initial project skeleton
+- AI tools: Claude Code was used to generate the initial project skeleton and the URL analysis module
 - TODO: add every other library, API, template and AI tool you use
 
 ## Track

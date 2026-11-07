@@ -1,7 +1,9 @@
 "use client";
 
+import Link from "next/link";
 import { FormEvent, useState } from "react";
 import type { Report } from "@/lib/report";
+import RegistryPanel from "./RegistryPanel";
 import styles from "./page.module.css";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
@@ -48,7 +50,7 @@ export default function Home() {
       <h1>Vexora</h1>
       <p className={styles.intro}>
         Check a suspicious link or message and see the evidence. Never enter passwords, OTPs or
-        private keys here.
+        private keys here. <Link href="/verify">Verify a registered report</Link>
       </p>
 
       <div className={styles.tabs}>
@@ -147,6 +149,8 @@ export default function Home() {
               <pre>{JSON.stringify(report.details, null, 2)}</pre>
             </details>
           )}
+
+          <RegistryPanel key={report.analysed_at} report={report} apiUrl={API_URL} />
         </section>
       )}
     </main>

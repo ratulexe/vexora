@@ -17,7 +17,10 @@ A blockchain record proves a report's integrity and history, not that the report
 - Live demo: TODO
 - Demo video (3 minutes maximum): TODO
 - Pitch deck: TODO
-- Contract address and transaction: TODO
+- Threat registry contract (Ethereum Sepolia testnet): [`0x5c886E470a08D0C30D6b1871989B3b6A9c5bca9C`](https://sepolia.etherscan.io/address/0x5c886E470a08D0C30D6b1871989B3b6A9c5bca9C)
+  - Deployment transaction: [`0x992b9d28...60c0eb`](https://sepolia.etherscan.io/tx/0x992b9d28fbf584420a04e25f170bf75a3c73deae6c666bd8c77f17c9a960c0eb) (block 12083376)
+  - Example report registration: [`0x513c60ae...7d7f171`](https://sepolia.etherscan.io/tx/0x513c60aeed7ca1d202bda214c027dd2e22674b0367cf514c8a7cd299f7d7f171), commitment `0x5a278772e3e0e9be26a2da13131051020dd125e13f17d2ecda03e8402a999ddf`
+  - Details: [contracts/deployments/sepolia.json](contracts/deployments/sepolia.json)
 
 TODO: add a screenshot.
 
@@ -25,13 +28,13 @@ TODO: add a screenshot.
 
 - Frontend: Next.js, TypeScript
 - Backend: Python, FastAPI
-- Blockchain: Solidity, Hardhat, EVM testnet
+- Blockchain: Solidity, Hardhat, Ethereum Sepolia testnet, web3.py, ethers.js
 - Threat intelligence: OpenPhish community feed, with optional URLhaus and Google Safe Browsing
 - Domain intelligence: RDAP (rdap.org) and Certificate Transparency logs (crt.sh)
 - AI: Claude (`claude-haiku-5-5`) through the Anthropic Python SDK, for explanations only
 - TODO: database
 
-See [docs/url-analysis.md](docs/url-analysis.md) and [docs/message-analysis.md](docs/message-analysis.md) for the analysis pipelines, safety measures and test results.
+See [docs/url-analysis.md](docs/url-analysis.md), [docs/message-analysis.md](docs/message-analysis.md) and [docs/web3-registry.md](docs/web3-registry.md) for the pipelines, safety measures and test results.
 
 ## Architecture
 
@@ -78,12 +81,14 @@ npm install
 npm test
 ```
 
+To run the registry on a local blockchain or deploy it to Sepolia, see [docs/web3-registry.md](docs/web3-registry.md).
+
 ## Disclosures
 
-- Libraries: FastAPI, Pydantic, Uvicorn, HTTPX, idna, tldextract, cryptography, Anthropic Python SDK, pytest, Next.js, React, Hardhat, Hardhat Toolbox
+- Libraries: FastAPI, Pydantic, Uvicorn, HTTPX, idna, tldextract, cryptography, Anthropic Python SDK, web3.py, pytest, Next.js, React, ethers.js, Hardhat, Hardhat Toolbox
 - Data sources: OpenPhish community feed, URLhaus, Google Safe Browsing, RDAP, crt.sh
 - Templates: `create-next-app` for the frontend
-- AI tools: Claude Code was used to generate the initial project skeleton and the URL and message analysis modules
+- AI tools: Claude Code was used to generate the initial project skeleton and the URL analysis, message analysis and threat registry modules
 - TODO: add every other library, API, template and AI tool you use
 
 ## Track

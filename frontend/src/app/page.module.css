@@ -102,3 +102,39 @@
   font-size: 13px;
   opacity: 0.75;
 }
+
+.primaryButton {
+  margin-top: 8px;
+  padding: 10px 16px;
+  border: 1px solid currentColor;
+  border-radius: 8px;
+  background: var(--foreground);
+  color: var(--background);
+  font: inherit;
+  cursor: pointer;
+}
+
+.primaryButton:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.linkButton {
+  padding: 0;
+  border: none;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.tabs .linkButton {
+  align-self: center;
+}
+
+.report code,
+.aiSummary code {
+  word-break: break-all;
+  font-size: 13px;
+}

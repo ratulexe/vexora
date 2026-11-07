@@ -1,5 +1,5 @@
 {
-  "name": "sentrace-contracts",
+  "name": "vexora-contracts",
   "private": true,
   "scripts": {
     "test": "hardhat test",

@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Sentrace",
+  title: "Vexora",
   description: "Investigate suspicious links and messages, with the evidence explained.",
 };
 

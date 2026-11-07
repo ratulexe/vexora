@@ -25,4 +25,5 @@ export interface Report {
   limitations: string[];
   analysed_at: string;
   details?: Record<string, unknown>;
+  ai_summary?: string | null;
 }

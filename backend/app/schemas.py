@@ -39,6 +39,7 @@ class Report(BaseModel):
     limitations: list[str]
     analysed_at: datetime
     details: dict[str, Any] = Field(default_factory=dict)
+    ai_summary: str | None = None
 
 
 class UrlRequest(BaseModel):

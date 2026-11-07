@@ -28,9 +28,10 @@ TODO: add a screenshot.
 - Blockchain: Solidity, Hardhat, EVM testnet
 - Threat intelligence: OpenPhish community feed, with optional URLhaus and Google Safe Browsing
 - Domain intelligence: RDAP (rdap.org) and Certificate Transparency logs (crt.sh)
-- TODO: AI provider and database
+- AI: Claude (`claude-haiku-5-5`) through the Anthropic Python SDK, for explanations only
+- TODO: database
 
-See [docs/url-analysis.md](docs/url-analysis.md) for the URL analysis pipeline, safety measures and test results.
+See [docs/url-analysis.md](docs/url-analysis.md) and [docs/message-analysis.md](docs/message-analysis.md) for the analysis pipelines, safety measures and test results.
 
 ## Architecture
 
@@ -79,10 +80,10 @@ npm test
 
 ## Disclosures
 
-- Libraries: FastAPI, Pydantic, Uvicorn, HTTPX, idna, tldextract, cryptography, pytest, Next.js, React, Hardhat, Hardhat Toolbox
+- Libraries: FastAPI, Pydantic, Uvicorn, HTTPX, idna, tldextract, cryptography, Anthropic Python SDK, pytest, Next.js, React, Hardhat, Hardhat Toolbox
 - Data sources: OpenPhish community feed, URLhaus, Google Safe Browsing, RDAP, crt.sh
 - Templates: `create-next-app` for the frontend
-- AI tools: Claude Code was used to generate the initial project skeleton and the URL analysis module
+- AI tools: Claude Code was used to generate the initial project skeleton and the URL and message analysis modules
 - TODO: add every other library, API, template and AI tool you use
 
 ## Track

@@ -90,3 +90,15 @@
   border-radius: 8px;
   font-size: 13px;
 }
+
+.aiSummary {
+  margin-top: 20px;
+  padding: 12px 16px;
+  border: 1px solid currentColor;
+  border-radius: 8px;
+}
+
+.note {
+  font-size: 13px;
+  opacity: 0.75;
+}

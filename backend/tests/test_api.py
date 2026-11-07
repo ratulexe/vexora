@@ -25,6 +25,7 @@ def fake_network(monkeypatch, confirmed=False, fetch=None):
         calls["fetch"] += 1
         return fetch or FetchResult(hops=[Hop(url=url, status=200, ip="93.184.215.14")], final_url=url, final_status=200)
 
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
     monkeypatch.setattr(analyzer, "check_threat_intel", threat_intel)
     monkeypatch.setattr(analyzer, "fetch_redirect_chain", fetch_chain)
     monkeypatch.setattr(analyzer, "check_tls", lambda host, prefix="": CheckResult(name=f"{prefix}TLS certificate", completed=True))
@@ -93,10 +94,13 @@ def test_invalid_url_is_inconclusive():
     assert report["classification"] == "Inconclusive"
 
 
-def test_analyze_message_returns_report_format():
+def test_analyze_message_flags_credential_request(monkeypatch):
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
     response = client.post("/analyze/message", json={"message": "Share your OTP now"})
     assert response.status_code == 200
-    assert response.json()["classification"] == "Inconclusive"
+    report = response.json()
+    assert report["classification"] == "Suspicious"
+    assert report["indicators"][0]["title"] == "Asks for an OTP, PIN, password or card details"
 
 
 def test_empty_url_is_rejected():

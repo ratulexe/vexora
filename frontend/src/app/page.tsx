@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { FormEvent, useState } from "react";
 import type { Report } from "@/lib/report";
+import { ANALYSIS_TIMEOUT_MS, SLOW_NOTICE_MS, postJson } from "@/lib/request";
 import RegistryPanel from "./RegistryPanel";
 import styles from "./page.module.css";
 
@@ -16,6 +17,7 @@ export default function Home() {
   const [report, setReport] = useState<Report | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [slow, setSlow] = useState(false);
 
   function handleSubmit(event: FormEvent) {
     event.preventDefault();
@@ -24,22 +26,20 @@ export default function Home() {
 
   async function runAnalysis(refresh: boolean) {
     setLoading(true);
+    setSlow(false);
     setError(null);
     setReport(null);
+    const slowTimer = setTimeout(() => setSlow(true), SLOW_NOTICE_MS);
 
     try {
-      const response = await fetch(`${API_URL}/analyze/${mode}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(mode === "url" ? { url: value, refresh } : { message: value }),
-      });
-      const data = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(data.detail ?? `Request failed (${response.status})`);
-      setReport(data);
+      const body = mode === "url" ? { url: value, refresh } : { message: value };
+      setReport(await postJson<Report>(`${API_URL}/analyze/${mode}`, body, ANALYSIS_TIMEOUT_MS));
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
     } finally {
+      clearTimeout(slowTimer);
       setLoading(false);
+      setSlow(false);
     }
   }
 
@@ -94,6 +94,12 @@ export default function Home() {
           {loading ? "Investigating..." : "Investigate"}
         </button>
       </form>
+
+      {loading && slow && (
+        <p className={styles.note} role="status">
+          Still working. If the server has been idle, it can take up to a minute to wake up.
+        </p>
+      )}
 
       {error && (
         <p role="alert" className={styles.error}>

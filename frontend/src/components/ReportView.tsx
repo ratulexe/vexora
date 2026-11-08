@@ -21,6 +21,7 @@ import {
   TriangleAlert,
   type LucideIcon,
 } from "lucide-react";
+import { motion, useReducedMotion } from "motion/react";
 import type { ReactNode } from "react";
 import type { Classification, Indicator, Report } from "@/lib/report";
 import RegistryPanel from "./RegistryPanel";
@@ -76,12 +77,29 @@ export default function ReportView({ report, apiUrl, onRecheck, busy }: Props) {
   const security = report.security_assessment;
   const related = report.correlation?.related ?? [];
   const [firstAction, ...otherActions] = report.recommended_actions;
+  const reduceMotion = useReducedMotion() ?? false;
+  const alarming = verdict.risk === "high" || verdict.risk === "critical";
 
   return (
     <article className="report" aria-label="Investigation report">
       <div className="verdict" data-risk={verdict.risk}>
         <div className="verdict-top">
-          <Icon size={44} className="verdict-icon" aria-hidden />
+          <motion.span
+            className="verdict-icon"
+            initial={reduceMotion ? false : { scale: 0.3, opacity: 0 }}
+            animate={
+              reduceMotion
+                ? { scale: 1, opacity: 1 }
+                : { scale: 1, opacity: 1, rotate: alarming ? [0, -12, 12, -8, 8, 0] : 0 }
+            }
+            transition={{
+              scale: { type: "spring", stiffness: 380, damping: 16 },
+              opacity: { duration: 0.2 },
+              rotate: { delay: 0.35, duration: 0.6 },
+            }}
+          >
+            <Icon size={44} aria-hidden />
+          </motion.span>
           <div>
             <div className="verdict-label">{report.classification}</div>
             <h2>{verdict.headline}</h2>
@@ -112,7 +130,7 @@ export default function ReportView({ report, apiUrl, onRecheck, busy }: Props) {
         </div>
       </div>
 
-      {report.ai_summary && (
+      {report.ai_summary ? (
         <section className="card ai-card" style={{ marginTop: 16 }}>
           <h3>
             <Bot size={18} aria-hidden /> AI explanation
@@ -120,6 +138,17 @@ export default function ReportView({ report, apiUrl, onRecheck, busy }: Props) {
           <p>{report.ai_summary}</p>
           <p className="note" style={{ marginTop: 10 }}>
             Written by AI from the findings below. The risk level is set by fixed rules, not by the AI.
+          </p>
+        </section>
+      ) : (
+        <section className="card ai-card ai-card-missing" style={{ marginTop: 16 }}>
+          <h3>
+            <Bot size={18} aria-hidden /> AI explanation
+          </h3>
+          <p className="note">
+            {report.limitations.find((item) => item.startsWith("AI explanation")) ??
+              "No AI explanation for this report."}{" "}
+            The risk level and evidence below come from fixed rules and do not depend on the AI.
           </p>
         </section>
       )}

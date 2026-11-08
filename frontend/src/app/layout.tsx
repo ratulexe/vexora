@@ -22,6 +22,15 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html lang="en" className={robotoMono.variable} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
+        {/* Redaction 20 is not in next/font's list yet, so it loads from Google Fonts directly.
+            This root layout wraps every page, so the font loads site-wide (the rule targets the Pages Router). */}
+        {/* eslint-disable-next-line @next/next/no-page-custom-font */}
+        <link
+          rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Redaction+20:ital,wght@0,400;0,700;1,400&display=swap"
+        />
       </head>
       <body>
         <SiteHeader />

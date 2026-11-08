@@ -114,7 +114,11 @@ export default function Home() {
         <span className="eyebrow">
           <Sparkles size={14} aria-hidden /> AI-powered web threat detection
         </span>
-        <h1>Check before you click, pay or reply.</h1>
+        <h1>
+          Check before you click,
+          <br />
+          <span className="accent">pay or reply.</span>
+        </h1>
         <p className="lead">
           Paste a suspicious link or message. Vexora investigates it, shows you the evidence, and tells you what to
           do next.
@@ -213,7 +217,10 @@ export default function Home() {
 
       <section className="section container" id="features">
         <h2 className="section-title">
-          <ShieldHalf size={22} aria-hidden /> What Vexora checks
+          <ShieldHalf size={26} aria-hidden />
+          <span>
+            What Vexora <span className="accent accent-text">checks</span>
+          </span>
         </h2>
         <p className="section-lead">
           Each finding comes with its evidence and source. Fixed rules decide the risk level; AI only explains it.
@@ -231,7 +238,10 @@ export default function Home() {
 
       <section className="section container" id="how-it-works" style={{ paddingTop: 0 }}>
         <h2 className="section-title">
-          <Bot size={22} aria-hidden /> How it works
+          <Bot size={26} aria-hidden />
+          <span>
+            How it <span className="accent accent-text">works</span>
+          </span>
         </h2>
         <p className="section-lead">
           A clean result means no warning signs were found in the checks that ran. It never proves something is safe.

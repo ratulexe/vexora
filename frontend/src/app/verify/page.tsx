@@ -87,7 +87,9 @@ export default function VerifyPage() {
         <span className="eyebrow">
           <Blocks size={14} aria-hidden /> Independent verification
         </span>
-        <h1>Verify a threat report</h1>
+        <h1>
+          Verify a threat <span className="accent">report</span>
+        </h1>
         <p className="lead">
           Check that a Vexora report has not been changed since it was registered. Your browser computes the
           report&apos;s fingerprint and reads the {REGISTRY.network} directly, so this does not depend on the Vexora

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Roboto_Mono } from "next/font/google";
+import { Instrument_Serif, Roboto_Mono } from "next/font/google";
 import SiteFooter from "@/components/SiteFooter";
 import SiteHeader from "@/components/SiteHeader";
 import "./globals.css";
@@ -7,6 +7,14 @@ import "./globals.css";
 const robotoMono = Roboto_Mono({
   variable: "--font-mono",
   subsets: ["latin"],
+});
+
+// The thin italic serif used for emphasised words in headings.
+const instrumentSerif = Instrument_Serif({
+  variable: "--font-accent",
+  subsets: ["latin"],
+  weight: "400",
+  style: ["normal", "italic"],
 });
 
 export const metadata: Metadata = {
@@ -19,17 +27,17 @@ const themeScript = `try{var t=localStorage.getItem("vexora-theme");if(t==="ligh
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={robotoMono.variable} suppressHydrationWarning>
+    <html lang="en" className={`${robotoMono.variable} ${instrumentSerif.variable}`} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
-        {/* Redaction 20 is not in next/font's list yet, so it loads from Google Fonts directly.
+        {/* Xmind is not in next/font's list yet, so it loads from Google Fonts directly.
             This root layout wraps every page, so the font loads site-wide (the rule targets the Pages Router). */}
         {/* eslint-disable-next-line @next/next/no-page-custom-font */}
         <link
           rel="stylesheet"
-          href="https://fonts.googleapis.com/css2?family=Redaction+20:ital,wght@0,400;0,700;1,400&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Xmind:wght@100..900&display=swap"
         />
       </head>
       <body>

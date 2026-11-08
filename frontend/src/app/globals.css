@@ -15,7 +15,7 @@
   --accent-soft: #e3f3f1;
   --focus: #2563eb;
   --shadow: 0 1px 2px rgb(16 24 40 / 6%), 0 8px 24px rgb(16 24 40 / 6%);
-  --font-display: "Redaction 20", Georgia, "Times New Roman", serif;
+  --font-display: "Xmind", system-ui, -apple-system, "Segoe UI", sans-serif;
 
   --risk-low: #157a3d;
   --risk-low-bg: #e7f6ec;
@@ -106,6 +106,7 @@ html {
 }
 
 body {
+  font-weight: 400;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
@@ -156,7 +157,20 @@ code,
 h1,
 h2,
 h3 {
-  font-weight: 700;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+/* Emphasised words in headings: a thin italic serif against the heavy sans-serif. */
+.accent {
+  font-family: var(--font-accent), Georgia, serif;
+  font-style: italic;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+}
+
+.accent-text {
+  color: var(--accent);
 }
 
 code {
@@ -201,7 +215,7 @@ main {
   display: flex;
   align-items: center;
   gap: 10px;
-  font-size: 22px;
+  font-size: clamp(26px, 4vw, 36px);
   margin-bottom: 8px;
 }
 
@@ -323,9 +337,10 @@ main {
 }
 
 .hero h1 {
-  font-size: clamp(32px, 6vw, 56px);
-  line-height: 1.1;
-  letter-spacing: -0.01em;
+  font-size: clamp(40px, 7.5vw, 80px);
+  font-weight: 800;
+  line-height: 1.02;
+  letter-spacing: -0.035em;
   margin-bottom: 14px;
 }
 
@@ -1172,4 +1187,19 @@ main {
 .step:hover {
   transform: translateY(-3px);
   border-color: var(--accent);
+}
+
+@media (max-width: 560px) {
+  .tabs {
+    display: flex;
+    width: 100%;
+  }
+
+  .tab {
+    flex: 1;
+    justify-content: center;
+    padding: 8px 6px;
+    font-size: 14px;
+    white-space: nowrap;
+  }
 }

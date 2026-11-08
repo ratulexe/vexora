@@ -37,7 +37,7 @@ A blockchain record proves a report's integrity and history, not that the report
 
 ## Tech stack
 
-- Frontend: Next.js, TypeScript, ethers.js, Lucide icons, Roboto Mono (Vercel)
+- Frontend: Next.js, TypeScript, ethers.js, Lucide icons, Motion animations, Xmind, Instrument Serif and Roboto Mono fonts (Vercel)
 - Backend: Python, FastAPI, HTTPX, cryptography, tldextract, web3.py (Render)
 - Blockchain: Solidity, Hardhat, Ethereum Sepolia testnet
 - AI: Claude (`claude-haiku-5-5`) through the Anthropic Python SDK, for explanations only
@@ -151,7 +151,7 @@ To run the registry on a local blockchain or deploy it to Sepolia, see [docs/web
 
 ## Disclosures
 
-- Libraries: FastAPI, Pydantic, Uvicorn, HTTPX, idna, tldextract, cryptography, certifi, Anthropic Python SDK, web3.py, pytest, Next.js, React, ethers.js, Lucide icons, Hardhat, Hardhat Toolbox
+- Libraries: FastAPI, Pydantic, Uvicorn, HTTPX, idna, tldextract, cryptography, certifi, Anthropic Python SDK, web3.py, pytest, Next.js, React, ethers.js, Lucide icons, Motion, Hardhat, Hardhat Toolbox
 - Data sources: OpenPhish community feed, URLhaus, Google Safe Browsing, RDAP (rdap.org), crt.sh
 - Templates: `create-next-app` for the frontend
 - AI tools: Claude Code was used to generate the project skeleton and the URL analysis, message analysis, website security, correlation, caching, rate limiting and threat registry modules, and this documentation

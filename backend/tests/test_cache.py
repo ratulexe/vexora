@@ -69,7 +69,8 @@ def fake_network(monkeypatch, confirmed=False, reachable=True):
         return ThreatIntelResult(check=check, confirmed=confirmed, any_source_available=True)
 
     def fetch_chain(url):
-        calls["fetch"] += 1
+        if not url.startswith("http://"):
+            calls["fetch"] += 1
         if not reachable:
             return FetchResult(error="Timed out connecting")
         return FetchResult(hops=[Hop(url=url, status=200, ip="93.184.215.14")], final_url=url, final_status=200)

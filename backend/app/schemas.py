@@ -30,6 +30,24 @@ class Indicator(BaseModel):
     source: str
 
 
+class SecurityFinding(BaseModel):
+    issue: str
+    severity: Severity
+    evidence: str
+    impact: str
+    remediation: str
+
+
+class SecurityAssessment(BaseModel):
+    """Website security configuration (Module 5). Never affects the risk classification."""
+
+    url: str
+    tls_verdict: str
+    findings: list[SecurityFinding]
+    passed: list[str]
+    limitations: list[str]
+
+
 class Report(BaseModel):
     input: str
     classification: Classification
@@ -41,6 +59,7 @@ class Report(BaseModel):
     details: dict[str, Any] = Field(default_factory=dict)
     ai_summary: str | None = None
     from_cache: bool = False
+    security_assessment: SecurityAssessment | None = None
 
 
 class UrlRequest(BaseModel):

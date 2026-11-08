@@ -156,6 +156,48 @@ export default function Home() {
             ))}
           </ul>
 
+          {report.security_assessment && (
+            <section className={styles.securitySection}>
+              <h3>Website security</h3>
+              <p className={styles.note}>
+                How well {report.security_assessment.url} protects its visitors. These are configuration checks,
+                separate from the risk level above.
+              </p>
+              <p>
+                Certificate: <strong>{report.security_assessment.tls_verdict}</strong>
+                {report.security_assessment.tls_verdict === "Valid" && " (a valid certificate does not mean the site is genuine)"}
+              </p>
+              {report.security_assessment.findings.length === 0 ? (
+                <p>No configuration weaknesses found in the passive checks.</p>
+              ) : (
+                <ul>
+                  {report.security_assessment.findings.map((finding) => (
+                    <li key={finding.issue}>
+                      <strong>
+                        {finding.severity}: {finding.issue}
+                      </strong>
+                      <br />
+                      {finding.evidence} {finding.impact}
+                      <br />
+                      <em>Fix:</em> {finding.remediation}
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {report.security_assessment.passed.length > 0 && (
+                <p className={styles.note}>Passed: {report.security_assessment.passed.join(", ")}.</p>
+              )}
+              <details>
+                <summary>What was not checked</summary>
+                <ul>
+                  {report.security_assessment.limitations.map((limitation) => (
+                    <li key={limitation}>{limitation}</li>
+                  ))}
+                </ul>
+              </details>
+            </section>
+          )}
+
           {report.details && Object.keys(report.details).length > 0 && (
             <details className={styles.details}>
               <summary>Technical details</summary>

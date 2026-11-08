@@ -9,6 +9,7 @@ import ssl
 import warnings
 from datetime import datetime, timezone
 
+import certifi
 from cryptography import x509
 from cryptography.hazmat.primitives.asymmetric import dsa, ec, rsa
 from cryptography.x509.oid import ExtensionOID, NameOID
@@ -68,8 +69,9 @@ def check_tls(host: str, prefix: str = "") -> CheckResult:
     result.completed = True
     details = _describe(leaf, host)
     details["tls_version"] = tls_version or unverified_version
-    details["trusted_by_this_server"] = bool(verified)
+    details["trusted"] = bool(verified)
     details["chain_length"] = len(chain)
+    details["legacy_tls_accepted"] = _accepts_legacy_tls(host, ip)
     result.details = details
 
     if verified:
@@ -124,6 +126,7 @@ def check_tls(host: str, prefix: str = "") -> CheckResult:
         add("Outdated TLS version", Severity.MEDIUM, f"The server negotiated {tls_version}.")
 
     result.limitations.append("Certificate revocation (OCSP/CRL) is not checked.")
+    result.limitations.append("Certificate trust is checked against Mozilla's root store (certifi).")
     return result
 
 
@@ -144,7 +147,9 @@ def _verify(host: str, ip: str) -> tuple[bool | None, int | None, str, str | Non
 
 
 def _verify_once(host: str, ip: str) -> tuple[bool | None, int | None, str, str | None]:
-    context = ssl.create_default_context()
+    # Mozilla's root store, so trust decisions match browsers and do not depend on the
+    # server's operating system (Windows, for example, adds some roots only on demand).
+    context = ssl.create_default_context(cafile=certifi.where())
     try:
         with socket.create_connection((ip, 443), timeout=TIMEOUT_SECONDS) as sock:
             with context.wrap_socket(sock, server_hostname=host) as tls:
@@ -153,6 +158,32 @@ def _verify_once(host: str, ip: str) -> tuple[bool | None, int | None, str, str 
         return False, error.verify_code, error.verify_message or str(error), None
     except ssl.SSLError as error:
         return None, None, f"TLS handshake failed: {error.reason or error}", None
+
+
+def _accepts_legacy_tls(host: str, ip: str) -> bool | None:
+    """True if the server completes a TLS 1.0/1.1 handshake. None if it could not be tested
+    (for example, the local OpenSSL build cannot offer those versions)."""
+    try:
+        context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+        context.check_hostname = False
+        context.verify_mode = ssl.CERT_NONE
+        context.minimum_version = ssl.TLSVersion.TLSv1
+        context.maximum_version = ssl.TLSVersion.TLSv1_1
+        context.set_ciphers("DEFAULT:@SECLEVEL=0")
+    except (ValueError, ssl.SSLError):
+        return None
+    try:
+        with socket.create_connection((ip, 443), timeout=TIMEOUT_SECONDS) as sock:
+            with context.wrap_socket(sock, server_hostname=host) as tls:
+                return tls.version() in ("TLSv1", "TLSv1.1")
+    except ssl.SSLError as error:
+        reason = (error.reason or "").upper()
+        # These mean our own OpenSSL refused to offer the old versions, not the server.
+        if "NO_PROTOCOLS_AVAILABLE" in reason or "NO_CIPHERS_AVAILABLE" in reason:
+            return None
+        return False
+    except OSError:
+        return None
 
 
 def _fetch_certificates(host: str, ip: str) -> tuple[x509.Certificate, list[x509.Certificate], str | None]:

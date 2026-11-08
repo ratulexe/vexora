@@ -112,6 +112,12 @@ def test_public_address_is_allowed():
     assert is_public_address("8.8.8.8")
 
 
+def test_nat64_addresses_are_judged_by_the_wrapped_ipv4_address():
+    assert is_public_address("64:ff9b::808:808")  # 8.8.8.8
+    assert not is_public_address("64:ff9b::7f00:1")  # 127.0.0.1
+    assert not is_public_address("64:ff9b::a9fe:a9fe")  # 169.254.169.254
+
+
 @pytest.mark.parametrize("host", ["localhost", "127.0.0.1", "169.254.169.254", "::1"])
 def test_resolving_internal_hosts_is_blocked(host):
     with pytest.raises(BlockedDestination):

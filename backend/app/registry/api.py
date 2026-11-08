@@ -1,12 +1,9 @@
 """HTTP endpoint for adding a report to the on-chain registry."""
 
-import threading
-import time
-from collections import defaultdict, deque
-
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 
+from ..rate_limit import REGISTRATION
 from ..schemas import Report
 from . import chain
 from .package import (
@@ -20,11 +17,6 @@ from .package import (
 )
 
 router = APIRouter()
-
-RATE_LIMIT = 5
-RATE_WINDOW_SECONDS = 600
-_recent: dict[str, deque] = defaultdict(deque)
-_recent_lock = threading.Lock()
 
 
 class RegisterRequest(BaseModel):
@@ -52,7 +44,8 @@ def register_report(body: RegisterRequest, request: Request) -> RegisterResponse
         package = build_package(body.report)
     except NotRegistrable as error:
         raise HTTPException(400, str(error)) from error
-    _check_rate_limit(_client_ip(request))
+    # Each registration spends testnet gas.
+    REGISTRATION.check(request, "Too many reports registered from your connection.")
 
     commitment = commitment_of(package)
     indicator = indicator_hash(package["domains"][0] if package["domains"] else None)
@@ -73,20 +66,3 @@ def register_report(body: RegisterRequest, request: Request) -> RegisterResponse
         package=package,
         canonical_json=canonical_json(package),
     )
-
-
-def _client_ip(request: Request) -> str:
-    forwarded = request.headers.get("x-forwarded-for", "")
-    return forwarded.split(",")[0].strip() or (request.client.host if request.client else "unknown")
-
-
-def _check_rate_limit(ip: str) -> None:
-    """Each registration costs testnet gas, so limit how often one visitor can register."""
-    now = time.monotonic()
-    with _recent_lock:
-        times = _recent[ip]
-        while times and now - times[0] > RATE_WINDOW_SECONDS:
-            times.popleft()
-        if len(times) >= RATE_LIMIT:
-            raise HTTPException(429, "Too many reports registered from your connection. Try again in a few minutes.")
-        times.append(now)

@@ -33,8 +33,9 @@ export default function Home() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(mode === "url" ? { url: value, refresh } : { message: value }),
       });
-      if (!response.ok) throw new Error(`Request failed (${response.status})`);
-      setReport(await response.json());
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.detail ?? `Request failed (${response.status})`);
+      setReport(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
     } finally {

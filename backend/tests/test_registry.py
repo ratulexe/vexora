@@ -7,7 +7,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.main import app
-from app.registry import api as registry_api
+from app.rate_limit import REGISTRATION
 from app.registry import chain
 from app.registry.package import NotRegistrable, build_package, canonical_json, commitment_of, indicator_hash
 from app.schemas import Classification, Indicator, Report, Severity
@@ -103,7 +103,6 @@ def fake_chain(monkeypatch):
 
     monkeypatch.setattr(chain, "can_register", lambda: True)
     monkeypatch.setattr(chain, "register", register)
-    registry_api._recent.clear()
     return calls
 
 
@@ -136,7 +135,7 @@ def test_registry_not_configured(monkeypatch):
 
 
 def test_rate_limit_per_visitor(fake_chain):
-    for _ in range(registry_api.RATE_LIMIT):
+    for _ in range(REGISTRATION.limit):
         assert post_report(make_report()).status_code == 200
     assert post_report(make_report()).status_code == 429
     assert post_report(make_report(), ip="198.51.100.9").status_code == 200

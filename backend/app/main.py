@@ -1,10 +1,11 @@
 import os
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 
 from .ai import add_ai_analysis
 from .message_analysis.analyzer import analyze_message as run_message_analysis
+from .rate_limit import LINK_ANALYSIS, MESSAGE_ANALYSIS
 from .registry.api import router as registry_router
 from .report_cache import link_report
 from .schemas import MessageRequest, Report, UrlRequest
@@ -26,10 +27,12 @@ def health() -> dict[str, str]:
 
 
 @app.post("/analyze/url", response_model=Report)
-def analyze_url(request: UrlRequest) -> Report:
-    return link_report(request.url, refresh=request.refresh)
+def analyze_url(body: UrlRequest, request: Request) -> Report:
+    LINK_ANALYSIS.check(request, "Too many link checks from your connection.")
+    return link_report(body.url, refresh=body.refresh)
 
 
 @app.post("/analyze/message", response_model=Report)
-def analyze_message(request: MessageRequest) -> Report:
-    return add_ai_analysis(run_message_analysis(request.message), message=request.message)
+def analyze_message(body: MessageRequest, request: Request) -> Report:
+    MESSAGE_ANALYSIS.check(request, "Too many message checks from your connection.")
+    return add_ai_analysis(run_message_analysis(body.message), message=body.message)

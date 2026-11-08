@@ -1279,3 +1279,58 @@ main {
     display: inline;
   }
 }
+
+/* File drop zone (verify page) */
+
+.drop-zone {
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  padding: 30px 18px;
+  text-align: center;
+  border: 2px dashed var(--border);
+  border-radius: 12px;
+  background: var(--bg);
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.drop-zone:hover,
+.drop-zone[data-dragging="true"] {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.drop-zone .button {
+  margin-top: 10px;
+}
+
+.drop-icon {
+  color: var(--accent);
+  margin-bottom: 4px;
+}
+
+.file-chip {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1px solid var(--risk-low);
+  border-radius: 12px;
+  background: var(--risk-low-bg);
+}
+
+.file-chip > svg {
+  color: var(--risk-low);
+}
+
+.file-chip div {
+  display: grid;
+  min-width: 0;
+}
+
+.file-chip strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

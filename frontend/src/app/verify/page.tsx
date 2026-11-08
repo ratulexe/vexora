@@ -4,15 +4,20 @@ import {
   BadgeCheck,
   Blocks,
   CircleAlert,
+  ChevronDown,
   ExternalLink,
+  FileCheck2,
   FileJson,
+  FileUp,
   Hash,
   History,
   LoaderCircle,
+  Search,
   ShieldCheck,
   ShieldX,
+  X,
 } from "lucide-react";
-import { ChangeEvent, FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 import {
   OnChainRecord,
   REGISTRY,
@@ -28,7 +33,11 @@ import {
 const HASH = /^0x[0-9a-fA-F]{64}$/;
 
 export default function VerifyPage() {
+  const [method, setMethod] = useState<"file" | "hash">("file");
   const [packageText, setPackageText] = useState("");
+  const [fileInfo, setFileInfo] = useState<{ name: string; size: number } | null>(null);
+  const [dragging, setDragging] = useState(false);
+  const fileInput = useRef<HTMLInputElement>(null);
   const [hashInput, setHashInput] = useState("");
   const [computed, setComputed] = useState<string | null>(null);
   const [record, setRecord] = useState<OnChainRecord | null>(null);
@@ -76,9 +85,22 @@ export default function VerifyPage() {
     void check(hashInput.trim(), false);
   }
 
-  async function loadFile(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
-    if (file) setPackageText(await file.text());
+  async function loadFile(file: File | undefined) {
+    if (!file) return;
+    setError(null);
+    setPackageText(await file.text());
+    setFileInfo({ name: file.name, size: file.size });
+  }
+
+  function clearFile() {
+    setPackageText("");
+    setFileInfo(null);
+    if (fileInput.current) fileInput.current.value = "";
+  }
+
+  function switchMethod(next: "file" | "hash") {
+    setMethod(next);
+    setError(null);
   }
 
   return (
@@ -105,44 +127,109 @@ export default function VerifyPage() {
         )}
 
         <div className="card">
-          <h3>
-            <FileJson size={18} aria-hidden /> Check a report file
-          </h3>
-          <form className="form-stack" onSubmit={verifyPackage}>
-            <input type="file" accept="application/json,.json" aria-label="Report package file" onChange={loadFile} />
-            <textarea
-              className="textarea"
-              aria-label="Report package JSON"
-              placeholder="Or paste the report package JSON"
-              value={packageText}
-              onChange={(event) => setPackageText(event.target.value)}
-              required
-            />
-            <button type="submit" className="button button-primary" disabled={checking || !registryConfigured}>
-              {checking ? <LoaderCircle size={16} className="spin" aria-hidden /> : <BadgeCheck size={16} aria-hidden />}
-              {checking ? "Checking the blockchain..." : "Verify report"}
+          <div className="tabs" role="tablist" aria-label="How to verify">
+            <button type="button" role="tab" className="tab" aria-selected={method === "file"} onClick={() => switchMethod("file")}>
+              <FileJson size={16} aria-hidden /> Report file
             </button>
-          </form>
-        </div>
+            <button type="button" role="tab" className="tab" aria-selected={method === "hash"} onClick={() => switchMethod("hash")}>
+              <Hash size={16} aria-hidden /> Commitment
+            </button>
+          </div>
 
-        <div className="card">
-          <h3>
-            <Hash size={18} aria-hidden /> Or look up a commitment
-          </h3>
-          <form className="field-row" onSubmit={verifyHash}>
-            <input
-              className="input"
-              aria-label="Commitment hash"
-              placeholder="0x..."
-              value={hashInput}
-              onChange={(event) => setHashInput(event.target.value)}
-              required
-              spellCheck={false}
-            />
-            <button type="submit" className="button" disabled={checking || !registryConfigured}>
-              Look up
-            </button>
-          </form>
+          {method === "file" ? (
+            <form className="form-stack" onSubmit={verifyPackage}>
+              {fileInfo ? (
+                <div className="file-chip">
+                  <FileCheck2 size={22} aria-hidden />
+                  <div>
+                    <strong>{fileInfo.name}</strong>
+                    <span className="note">{formatSize(fileInfo.size)} · ready to verify</span>
+                  </div>
+                  <button type="button" className="icon-button" onClick={clearFile} aria-label="Remove file">
+                    <X size={16} aria-hidden />
+                  </button>
+                </div>
+              ) : (
+                <div
+                  className="drop-zone"
+                  data-dragging={dragging}
+                  onDragOver={(event) => {
+                    event.preventDefault();
+                    setDragging(true);
+                  }}
+                  onDragLeave={() => setDragging(false)}
+                  onDrop={(event) => {
+                    event.preventDefault();
+                    setDragging(false);
+                    void loadFile(event.dataTransfer.files[0]);
+                  }}
+                >
+                  <FileUp size={34} aria-hidden className="drop-icon" />
+                  <p>
+                    <strong>Drop your report file here</strong>
+                  </p>
+                  <p className="note">The .json file you downloaded after registering a report</p>
+                  <button type="button" className="button" onClick={() => fileInput.current?.click()}>
+                    <FileUp size={16} aria-hidden /> Choose file
+                  </button>
+                  <input
+                    ref={fileInput}
+                    type="file"
+                    accept="application/json,.json"
+                    aria-label="Report package file"
+                    hidden
+                    onChange={(event) => void loadFile(event.target.files?.[0])}
+                  />
+                </div>
+              )}
+
+              {!fileInfo && (
+                <details className="disclosure">
+                  <summary>
+                    <FileJson size={16} aria-hidden /> Or paste the JSON instead
+                    <ChevronDown size={16} className="chevron" aria-hidden />
+                  </summary>
+                  <div className="disclosure-body">
+                    <textarea
+                      className="textarea"
+                      aria-label="Report package JSON"
+                      placeholder='{"package": {...}, "commitment": "0x..."}'
+                      value={packageText}
+                      onChange={(event) => setPackageText(event.target.value)}
+                    />
+                  </div>
+                </details>
+              )}
+
+              <button
+                type="submit"
+                className="button button-primary"
+                disabled={checking || !registryConfigured || !packageText.trim()}
+              >
+                {checking ? <LoaderCircle size={16} className="spin" aria-hidden /> : <BadgeCheck size={16} aria-hidden />}
+                {checking ? "Checking the blockchain..." : "Verify report"}
+              </button>
+            </form>
+          ) : (
+            <form className="form-stack" onSubmit={verifyHash}>
+              <p className="note">Paste the commitment shown when the report was registered (0x followed by 64 characters).</p>
+              <div className="field-row">
+                <input
+                  className="input"
+                  aria-label="Commitment hash"
+                  placeholder="0x..."
+                  value={hashInput}
+                  onChange={(event) => setHashInput(event.target.value)}
+                  required
+                  spellCheck={false}
+                />
+                <button type="submit" className="button button-primary" disabled={checking || !registryConfigured}>
+                  {checking ? <LoaderCircle size={16} className="spin" aria-hidden /> : <Search size={16} aria-hidden />}
+                  Look up
+                </button>
+              </div>
+            </form>
+          )}
         </div>
 
         {error && (
@@ -305,4 +392,8 @@ function pillFor(classification: string): string {
 
 function short(hash: string): string {
   return `${hash.slice(0, 10)}...${hash.slice(-6)}`;
+}
+
+function formatSize(bytes: number): string {
+  return bytes < 1024 ? `${bytes} bytes` : `${(bytes / 1024).toFixed(1)} KB`;
 }

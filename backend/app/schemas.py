@@ -87,5 +87,9 @@ class UrlRequest(BaseModel):
     refresh: bool = False  # Ignore any saved result and check again
 
 
+class QrRequest(BaseModel):
+    content: str = Field(min_length=1, max_length=4096)  # Text decoded from the QR image in the browser
+
+
 class MessageRequest(BaseModel):
     message: str = Field(min_length=1, max_length=10000)

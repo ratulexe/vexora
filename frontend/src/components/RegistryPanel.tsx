@@ -1,11 +1,11 @@
 "use client";
 
+import { BadgeCheck, Blocks, CircleAlert, CircleCheck, Download, ExternalLink, LoaderCircle } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { registryConfigured } from "@/lib/registry";
 import type { Report } from "@/lib/report";
 import { REGISTRATION_TIMEOUT_MS, postJson } from "@/lib/request";
-import styles from "./page.module.css";
 
 const REGISTRABLE = ["Suspicious", "High Risk", "Confirmed Malicious"];
 
@@ -56,56 +56,70 @@ export default function RegistryPanel({ report, apiUrl }: { report: Report; apiU
   }
 
   return (
-    <div className={styles.aiSummary}>
-      <h3>Share with the threat registry</h3>
+    <section className="card" style={{ marginTop: 16 }}>
+      <h3>
+        <Blocks size={18} aria-hidden /> Warn others: add to the threat registry
+      </h3>
       {!registration ? (
         <>
-          <p>
-            Record a tamper-evident fingerprint of this report on the blockchain, so others can see this
-            threat was reported. Only a hash goes on-chain. The shared report holds the risk level, finding
-            titles and domains, never your message text, full links or personal details.
+          <p className="note" style={{ marginBottom: 14 }}>
+            Records a tamper-evident fingerprint of this report on the Ethereum Sepolia blockchain, so other people
+            checking this site see it was reported. Only a hash goes on-chain. The shared report holds the risk
+            level, finding titles and domains, never your message text, full links or personal details.
           </p>
-          <button type="button" className={styles.primaryButton} onClick={register} disabled={saving}>
-            {saving ? "Registering on-chain (up to a minute)..." : "Add to threat registry"}
+          <button type="button" className="button button-primary" onClick={register} disabled={saving}>
+            {saving ? (
+              <>
+                <LoaderCircle size={16} className="spin" aria-hidden /> Recording on the blockchain (up to a minute)...
+              </>
+            ) : (
+              <>
+                <Blocks size={16} aria-hidden /> Add to threat registry
+              </>
+            )}
           </button>
           {error && (
-            <p role="alert" className={styles.error}>
-              {error}
+            <p role="alert" className="alert-error">
+              <CircleAlert size={18} aria-hidden /> {error}
             </p>
           )}
         </>
       ) : (
         <>
-          <p>Registered in block {registration.block_number}.</p>
-          <ul>
+          <p style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12, fontWeight: 600 }}>
+            <CircleCheck size={18} aria-hidden style={{ color: "var(--risk-low)" }} /> Recorded in block{" "}
+            {registration.block_number}
+          </p>
+          <ul className="result-row" style={{ marginBottom: 14 }}>
             <li>
-              Commitment: <code>{registration.commitment}</code>
+              <span className="label">Commitment</span>
+              <code>{registration.commitment}</code>
             </li>
             <li>
-              Transaction:{" "}
+              <span className="label">Transaction</span>
               {registration.explorer_url ? (
                 <a href={registration.explorer_url} target="_blank" rel="noreferrer">
-                  <code>{registration.transaction_hash}</code>
+                  <code>{registration.transaction_hash}</code> <ExternalLink size={12} aria-hidden />
                 </a>
               ) : (
                 <code>{registration.transaction_hash}</code>
               )}
             </li>
           </ul>
-          <div className={styles.tabs}>
-            <button type="button" onClick={download}>
-              Download report file
+          <div className="field-row">
+            <button type="button" className="button" onClick={download}>
+              <Download size={16} aria-hidden /> Download report file
             </button>
-            <Link href="/verify" className={styles.linkButton}>
-              Verify it independently
+            <Link href="/verify" className="button">
+              <BadgeCheck size={16} aria-hidden /> Verify it independently
             </Link>
           </div>
-          <p className={styles.note}>
+          <p className="note" style={{ marginTop: 12 }}>
             Keep the report file: it is the only full copy. A registry record proves the report has not been
             changed, not that it is correct.
           </p>
         </>
       )}
-    </div>
+    </section>
   );
 }

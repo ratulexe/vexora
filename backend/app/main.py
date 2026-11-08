@@ -7,10 +7,11 @@ from .ai import add_ai_analysis
 from .correlation import correlate, message_features
 from .message_analysis.analyzer import MESSAGE_ACTIONS
 from .message_analysis.analyzer import analyze_message as run_message_analysis
-from .rate_limit import LINK_ANALYSIS, MESSAGE_ANALYSIS
+from .qr_analysis import analyze_qr as run_qr_analysis
+from .rate_limit import LINK_ANALYSIS, MESSAGE_ANALYSIS, QR_ANALYSIS
 from .registry.api import router as registry_router
 from .report_cache import link_report
-from .schemas import MessageRequest, Report, UrlRequest
+from .schemas import MessageRequest, QrRequest, Report, UrlRequest
 
 app = FastAPI(title="Vexora API")
 
@@ -41,3 +42,9 @@ def analyze_message(body: MessageRequest, request: Request) -> Report:
     # correlate() stores only a keyed hash of the message, never the text itself.
     report = correlate("message", body.message, message_features(body.message, report), report, MESSAGE_ACTIONS)
     return add_ai_analysis(report, message=body.message)
+
+
+@app.post("/analyze/qr", response_model=Report)
+def analyze_qr(body: QrRequest, request: Request) -> Report:
+    QR_ANALYSIS.check(request, "Too many QR checks from your connection.")
+    return run_qr_analysis(body.content)

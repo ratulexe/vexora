@@ -77,6 +77,11 @@ def _hash(value: str) -> str:
 # Building fingerprints
 
 
+def upi_contact(upi_id: str) -> str:
+    """The stored fingerprint of a UPI ID, matching the one built from messages."""
+    return f"upi:{_hash(upi_id.lower())}"
+
+
 def link_features(report: Report) -> Features:
     details = report.details
     features = Features(brands=_brands(report.indicators))

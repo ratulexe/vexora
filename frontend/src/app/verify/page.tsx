@@ -1,6 +1,17 @@
 "use client";
 
-import Link from "next/link";
+import {
+  BadgeCheck,
+  Blocks,
+  CircleAlert,
+  ExternalLink,
+  FileJson,
+  Hash,
+  History,
+  LoaderCircle,
+  ShieldCheck,
+  ShieldX,
+} from "lucide-react";
 import { ChangeEvent, FormEvent, useEffect, useState } from "react";
 import {
   OnChainRecord,
@@ -13,7 +24,6 @@ import {
   recentReports,
   registryConfigured,
 } from "@/lib/registry";
-import styles from "../page.module.css";
 
 const HASH = /^0x[0-9a-fA-F]{64}$/;
 
@@ -72,145 +82,187 @@ export default function VerifyPage() {
   }
 
   return (
-    <main className={styles.main}>
-      <p>
-        <Link href="/">← Back to Vexora</Link>
-      </p>
-      <h1>Verify a threat report</h1>
-      <p className={styles.intro}>
-        Check that a Vexora threat report has not been changed since it was registered. Your browser
-        computes the report&apos;s fingerprint and reads the {REGISTRY.network} directly, so this check
-        does not depend on the Vexora server.
-      </p>
-
-      {!registryConfigured && (
-        <p role="alert" className={styles.error}>
-          The registry is not configured for this site yet.
+    <>
+      <section className="hero container">
+        <span className="eyebrow">
+          <Blocks size={14} aria-hidden /> Independent verification
+        </span>
+        <h1>Verify a threat report</h1>
+        <p className="lead">
+          Check that a Vexora report has not been changed since it was registered. Your browser computes the
+          report&apos;s fingerprint and reads the {REGISTRY.network} directly, so this does not depend on the Vexora
+          server.
         </p>
-      )}
+      </section>
 
-      <h3>Check a report file</h3>
-      <form className={styles.form} onSubmit={verifyPackage}>
-        <input type="file" accept="application/json,.json" aria-label="Report package file" onChange={loadFile} />
-        <textarea
-          aria-label="Report package JSON"
-          placeholder="Or paste the report package JSON"
-          rows={6}
-          value={packageText}
-          onChange={(event) => setPackageText(event.target.value)}
-          required
-        />
-        <button type="submit" disabled={checking || !registryConfigured}>
-          {checking ? "Checking..." : "Verify report"}
-        </button>
-      </form>
+      <section className="container checker">
+        {!registryConfigured && (
+          <p role="alert" className="alert-error">
+            <CircleAlert size={18} aria-hidden /> The registry is not configured for this site yet.
+          </p>
+        )}
 
-      <h3>Or look up a commitment</h3>
-      <form className={styles.form} onSubmit={verifyHash}>
-        <input
-          aria-label="Commitment hash"
-          placeholder="0x..."
-          value={hashInput}
-          onChange={(event) => setHashInput(event.target.value)}
-          required
-        />
-        <button type="submit" disabled={checking || !registryConfigured}>
-          {checking ? "Checking..." : "Look up"}
-        </button>
-      </form>
+        <div className="card">
+          <h3>
+            <FileJson size={18} aria-hidden /> Check a report file
+          </h3>
+          <form className="form-stack" onSubmit={verifyPackage}>
+            <input type="file" accept="application/json,.json" aria-label="Report package file" onChange={loadFile} />
+            <textarea
+              className="textarea"
+              aria-label="Report package JSON"
+              placeholder="Or paste the report package JSON"
+              value={packageText}
+              onChange={(event) => setPackageText(event.target.value)}
+              required
+            />
+            <button type="submit" className="button button-primary" disabled={checking || !registryConfigured}>
+              {checking ? <LoaderCircle size={16} className="spin" aria-hidden /> : <BadgeCheck size={16} aria-hidden />}
+              {checking ? "Checking the blockchain..." : "Verify report"}
+            </button>
+          </form>
+        </div>
 
-      {error && (
-        <p role="alert" className={styles.error}>
-          {error}
-        </p>
-      )}
+        <div className="card">
+          <h3>
+            <Hash size={18} aria-hidden /> Or look up a commitment
+          </h3>
+          <form className="field-row" onSubmit={verifyHash}>
+            <input
+              className="input"
+              aria-label="Commitment hash"
+              placeholder="0x..."
+              value={hashInput}
+              onChange={(event) => setHashInput(event.target.value)}
+              required
+              spellCheck={false}
+            />
+            <button type="submit" className="button" disabled={checking || !registryConfigured}>
+              Look up
+            </button>
+          </form>
+        </div>
 
-      {record && (
-        <section className={styles.report}>
-          {record.registered ? (
-            <>
-              <h2>{computed ? "Verified: this report is unchanged" : "Registered report found"}</h2>
-              <p>
-                {computed
-                  ? "The fingerprint of this file matches a report registered on-chain."
-                  : "This commitment is registered on-chain."}{" "}
-                This proves the report has not changed since it was registered, and who registered it and
-                when. It does not prove that the report is correct.
-              </p>
+        {error && (
+          <p role="alert" className="alert-error">
+            <CircleAlert size={18} aria-hidden /> {error}
+          </p>
+        )}
+
+        {record && (
+          <div className="verdict" data-risk={record.registered ? "low" : "critical"} style={{ marginTop: 16 }} aria-live="polite">
+            <div className="verdict-top">
+              {record.registered ? (
+                <ShieldCheck size={44} className="verdict-icon" aria-hidden />
+              ) : (
+                <ShieldX size={44} className="verdict-icon" aria-hidden />
+              )}
+              <div>
+                <div className="verdict-label">{record.registered ? "Match found" : "No match"}</div>
+                <h2>
+                  {record.registered
+                    ? computed
+                      ? "Verified: this report is unchanged"
+                      : "Registered report found"
+                    : "Not found on-chain"}
+                </h2>
+                <p>
+                  {record.registered
+                    ? "This proves the report has not changed since it was registered, and who registered it and when. It does not prove the report is correct."
+                    : computed
+                      ? "No registered report has this fingerprint. The file was changed after registration, or it was never registered."
+                      : "No report is registered with this commitment."}
+                </p>
+              </div>
+            </div>
+            {record.registered ? (
               <RecordDetails record={record} onOpen={(hash) => void check(hash, false)} />
-            </>
-          ) : (
-            <>
-              <h2>Not found on-chain</h2>
-              <p>
-                {computed
-                  ? "No registered report has this fingerprint. The file was changed after registration, or it was never registered."
-                  : "No report is registered with this commitment."}
-              </p>
-              {computed && (
-                <p className={styles.note}>
+            ) : (
+              computed && (
+                <p className="note" style={{ marginTop: 12 }}>
                   Computed fingerprint: <code>{computed}</code>
                 </p>
-              )}
-            </>
-          )}
-        </section>
-      )}
+              )
+            )}
+          </div>
+        )}
 
-      {registryConfigured && (
-        <section className={styles.report}>
-          <h3>Recently registered reports</h3>
-          {recentError && <p>{recentError}</p>}
-          {!recent && !recentError && <p>Loading from the blockchain...</p>}
-          {recent?.length === 0 && <p>No reports have been registered yet.</p>}
-          {recent && recent.length > 0 && (
-            <ul>
-              {recent.map((entry) => (
-                <li key={entry.commitment}>
-                  <button type="button" className={styles.linkButton} onClick={() => void check(entry.commitment, false)}>
-                    {entry.classification} {entry.kind.toLowerCase()} report
-                  </button>{" "}
-                  · {entry.registeredAt.toLocaleString()} · <code>{short(entry.commitment)}</code>
-                  {explorerLink("tx", entry.transactionHash) && (
-                    <>
-                      {" "}
-                      ·{" "}
-                      <a href={explorerLink("tx", entry.transactionHash)!} target="_blank" rel="noreferrer">
-                        transaction
-                      </a>
-                    </>
-                  )}
-                </li>
-              ))}
-            </ul>
-          )}
-          <p className={styles.note}>
-            Contract:{" "}
-            {explorerLink("address", REGISTRY.address) ? (
-              <a href={explorerLink("address", REGISTRY.address)!} target="_blank" rel="noreferrer">
+        {registryConfigured && (
+          <div className="card" style={{ marginTop: 16 }}>
+            <h3>
+              <History size={18} aria-hidden /> Recently registered reports
+            </h3>
+            {recentError && <p className="note">{recentError}</p>}
+            {!recent && !recentError && (
+              <p className="note">
+                <LoaderCircle size={14} className="spin" aria-hidden style={{ verticalAlign: "-2px" }} /> Loading from
+                the blockchain...
+              </p>
+            )}
+            {recent?.length === 0 && <p className="note">No reports have been registered yet.</p>}
+            {recent && recent.length > 0 && (
+              <ul className="finding-list">
+                {recent.map((entry) => (
+                  <li key={entry.commitment} className="finding">
+                    <span className="pill" data-severity={pillFor(entry.classification)}>
+                      {entry.kind}
+                    </span>
+                    <button type="button" className="link-button finding-title" onClick={() => void check(entry.commitment, false)}>
+                      {entry.classification} {entry.kind.toLowerCase()} report
+                    </button>
+                    <span className="finding-body">
+                      {entry.registeredAt.toLocaleString()} · <code>{short(entry.commitment)}</code>
+                      {explorerLink("tx", entry.transactionHash) && (
+                        <>
+                          {" "}
+                          ·{" "}
+                          <a href={explorerLink("tx", entry.transactionHash)!} target="_blank" rel="noreferrer">
+                            transaction <ExternalLink size={11} aria-hidden />
+                          </a>
+                        </>
+                      )}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <p className="note" style={{ marginTop: 12 }}>
+              Contract:{" "}
+              {explorerLink("address", REGISTRY.address) ? (
+                <a href={explorerLink("address", REGISTRY.address)!} target="_blank" rel="noreferrer">
+                  <code>{REGISTRY.address}</code>
+                </a>
+              ) : (
                 <code>{REGISTRY.address}</code>
-              </a>
-            ) : (
-              <code>{REGISTRY.address}</code>
-            )}{" "}
-            on {REGISTRY.network}
-          </p>
-        </section>
-      )}
-    </main>
+              )}{" "}
+              on {REGISTRY.network}
+            </p>
+          </div>
+        )}
+      </section>
+      <div style={{ height: 56 }} />
+    </>
   );
 }
 
 function RecordDetails({ record, onOpen }: { record: OnChainRecord; onOpen: (hash: string) => void }) {
   const reporterLink = explorerLink("address", record.reporter);
   return (
-    <ul>
-      <li>Status: {record.status}</li>
-      <li>Classification: {record.classification}</li>
-      <li>Type: {record.kind}</li>
-      <li>Registered: {record.registeredAt?.toLocaleString()}</li>
+    <ul className="result-row" style={{ marginTop: 14 }}>
       <li>
-        Registered by:{" "}
+        <span className="label">Status</span> <span className="tag">{record.status}</span>
+      </li>
+      <li>
+        <span className="label">Classification</span> {record.classification}
+      </li>
+      <li>
+        <span className="label">Type</span> {record.kind}
+      </li>
+      <li>
+        <span className="label">Registered</span> {record.registeredAt?.toLocaleString()}
+      </li>
+      <li>
+        <span className="label">Registered by</span>
         {reporterLink ? (
           <a href={reporterLink} target="_blank" rel="noreferrer">
             <code>{record.reporter}</code>
@@ -219,28 +271,34 @@ function RecordDetails({ record, onOpen }: { record: OnChainRecord; onOpen: (has
           <code>{record.reporter}</code>
         )}
       </li>
-      <li>Disputes: {record.disputes}</li>
       <li>
-        Commitment: <code>{record.commitment}</code>
+        <span className="label">Disputes</span> {record.disputes}
+      </li>
+      <li>
+        <span className="label">Commitment</span> <code>{record.commitment}</code>
       </li>
       {record.previous && (
         <li>
-          Revises an earlier report:{" "}
-          <button type="button" className={styles.linkButton} onClick={() => onOpen(record.previous!)}>
+          <span className="label">Revises</span>
+          <button type="button" className="link-button" onClick={() => onOpen(record.previous!)}>
             {short(record.previous)}
           </button>
         </li>
       )}
       {record.next && (
         <li>
-          Replaced by a newer version:{" "}
-          <button type="button" className={styles.linkButton} onClick={() => onOpen(record.next!)}>
+          <span className="label">Replaced by</span>
+          <button type="button" className="link-button" onClick={() => onOpen(record.next!)}>
             {short(record.next)}
           </button>
         </li>
       )}
     </ul>
   );
+}
+
+function pillFor(classification: string): string {
+  return classification === "Confirmed Malicious" ? "Critical" : classification === "High Risk" ? "High" : "Medium";
 }
 
 function short(hash: string): string {

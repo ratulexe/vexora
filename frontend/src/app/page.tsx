@@ -10,6 +10,7 @@ import {
   Lock,
   Mail,
   Network,
+  QrCode,
   ScanSearch,
   ShieldCheck,
   ShieldHalf,
@@ -17,6 +18,7 @@ import {
 } from "lucide-react";
 import { FormEvent, useState } from "react";
 import AnalysisProgress from "@/components/AnalysisProgress";
+import QrInput, { qrKind } from "@/components/QrInput";
 import ReportView from "@/components/ReportView";
 import type { Report } from "@/lib/report";
 import { ANALYSIS_TIMEOUT_MS, postJson } from "@/lib/request";
@@ -24,10 +26,10 @@ import { ANALYSIS_TIMEOUT_MS, postJson } from "@/lib/request";
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 const FINISH_PAUSE_MS = 400;
 
-type Mode = "url" | "message";
+type Mode = "url" | "message" | "qr";
 type Phase = "idle" | "running" | "finishing";
 
-const EXAMPLES: Record<Mode, { label: string; value: string }[]> = {
+const EXAMPLES: Record<"url" | "message", { label: string; value: string }[]> = {
   url: [
     { label: "Look-alike PayPal", value: "https://paypa1-secure-login.com/verify" },
     { label: "Expired certificate", value: "https://expired.badssl.com" },
@@ -50,14 +52,14 @@ const EXAMPLES: Record<Mode, { label: string; value: string }[]> = {
 const FEATURES = [
   { icon: Link2, title: "Link investigation", text: "Look-alike domains, homographs, redirects and known phishing feeds, checked without ever running the page's scripts." },
   { icon: Lock, title: "Certificate trust", text: "Expiry, name mismatches, weak keys and distrusted certificate authorities, checked against browsers' root store." },
-  { icon: Mail, title: "Scam message analysis", text: "OTP requests, fake KYC, digital arrest, lottery fees and job scams, with every finding quoted from the message." },
+  { icon: Mail, title: "Messages and QR codes", text: "OTP requests, fake KYC, lottery fees and job scams in messages, and fake \"scan to receive money\" UPI QR codes." },
   { icon: Network, title: "Campaign correlation", text: "Links reports that reuse the same domain, destination, phone number, UPI ID or wording." },
   { icon: ShieldHalf, title: "Website security", text: "Passive checks of HSTS, CSP, clickjacking protection, cookies and old TLS versions, each with a fix." },
   { icon: Blocks, title: "On-chain registry", text: "Tamper-evident threat reports on Ethereum Sepolia that anyone can verify in their own browser." },
 ];
 
 const STEPS = [
-  { title: "Submit", text: "Paste a link, domain, email or message. Never paste passwords or OTPs." },
+  { title: "Submit", text: "Paste a link, message or email, or add a QR code. Never paste passwords or OTPs." },
   { title: "Investigate", text: "Vexora checks threat feeds, certificates, redirects and scam patterns safely." },
   { title: "Assess", text: "Fixed rules set the risk level from the evidence. AI explains it in plain language." },
   { title: "Report and verify", text: "Share suspicious reports on-chain, so anyone can check they were never changed." },
@@ -78,7 +80,12 @@ export default function Home() {
     setError(null);
     setReport(null);
     try {
-      const body = mode === "url" ? { url: input, refresh } : { message: input };
+      const body =
+        mode === "url"
+          ? { url: input, refresh }
+          : mode === "message"
+            ? { message: input }
+            : { content: withoutWifiPassword(input) };
       const result = await postJson<Report>(`${API_URL}/analyze/${mode}`, body, ANALYSIS_TIMEOUT_MS);
       setPhase("finishing");
       // A brief moment at 100% so the jump to the report does not feel abrupt.
@@ -120,8 +127,8 @@ export default function Home() {
           <span className="accent">pay or reply.</span>
         </h1>
         <p className="lead">
-          Paste a suspicious link or message. Vexora investigates it, shows you the evidence, and tells you what to
-          do next.
+          Paste a suspicious link or message, or add a QR code. Vexora investigates it, shows you the evidence, and
+          tells you what to do next.
         </p>
         <div className="trust-row">
           <span>
@@ -140,7 +147,8 @@ export default function Home() {
         <div className="card checker">
           <div className="tabs" role="tablist" aria-label="What to check">
             <button type="button" role="tab" className="tab" aria-selected={mode === "url"} onClick={() => switchMode("url")}>
-              <Link2 size={16} aria-hidden /> Link or domain
+              <Link2 size={16} aria-hidden /> <span className="tab-long">Link or domain</span>
+              <span className="tab-short">Link</span>
             </button>
             <button
               type="button"
@@ -149,7 +157,11 @@ export default function Home() {
               aria-selected={mode === "message"}
               onClick={() => switchMode("message")}
             >
-              <Mail size={16} aria-hidden /> Message or email
+              <Mail size={16} aria-hidden /> <span className="tab-long">Message or email</span>
+              <span className="tab-short">Message</span>
+            </button>
+            <button type="button" role="tab" className="tab" aria-selected={mode === "qr"} onClick={() => switchMode("qr")}>
+              <QrCode size={16} aria-hidden /> QR code
             </button>
           </div>
 
@@ -170,6 +182,22 @@ export default function Home() {
                   <ScanSearch size={18} aria-hidden /> {busy ? "Investigating..." : "Investigate"}
                 </button>
               </div>
+            ) : mode === "qr" ? (
+              <div className="form-stack">
+                <QrInput
+                  content={value}
+                  onDecoded={setValue}
+                  onSample={(content) => {
+                    setValue(content);
+                    void runAnalysis(false, content);
+                  }}
+                  disabled={busy}
+                />
+                <button type="submit" className="button button-primary" disabled={busy || !value}>
+                  <ScanSearch size={18} aria-hidden />{" "}
+                  {busy ? "Investigating..." : value ? `Investigate this ${qrKind(value).toLowerCase()}` : "Add a QR code first"}
+                </button>
+              </div>
             ) : (
               <div className="form-stack">
                 <textarea
@@ -187,19 +215,22 @@ export default function Home() {
             )}
           </form>
 
-          <div className="examples">
-            <span>Try an example:</span>
-            {EXAMPLES[mode].map((example) => (
-              <button key={example.label} type="button" className="chip" onClick={() => tryExample(example.value)} disabled={busy}>
-                {example.label}
-              </button>
-            ))}
-          </div>
+          {mode !== "qr" && (
+            <div className="examples">
+              <span>Try an example:</span>
+              {EXAMPLES[mode].map((example) => (
+                <button key={example.label} type="button" className="chip" onClick={() => tryExample(example.value)} disabled={busy}>
+                  {example.label}
+                </button>
+              ))}
+            </div>
+          )}
 
           <p className="privacy-note">
             <Lock size={14} aria-hidden />
-            Never paste passwords, OTPs or card numbers. Phone numbers, UPI IDs and other personal details are removed
-            before anything is sent to the AI.
+            {mode === "qr"
+              ? "QR images are decoded in your browser and never uploaded; only the text inside is checked. Wi-Fi passwords are never sent."
+              : "Never paste passwords, OTPs or card numbers. Phone numbers, UPI IDs and other personal details are removed before anything is sent to the AI."}
           </p>
         </div>
 
@@ -263,4 +294,9 @@ export default function Home() {
       </section>
     </>
   );
+}
+
+/** Wi-Fi QR codes carry the network password; keep it on this device. */
+function withoutWifiPassword(content: string): string {
+  return /^wifi:/i.test(content.trim()) ? content.replace(/P:(\\.|[^;])*;?/i, "") : content;
 }

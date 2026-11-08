@@ -68,5 +68,6 @@ def client_ip(request: Request) -> str:
 
 LINK_ANALYSIS = RateLimiter("link analysis", limit=30, window_seconds=600)
 MESSAGE_ANALYSIS = RateLimiter("message analysis", limit=20, window_seconds=600)
+QR_ANALYSIS = RateLimiter("QR analysis", limit=20, window_seconds=600)
 REGISTRATION = RateLimiter("registry submissions", limit=5, window_seconds=600)
 AI_CALLS = RateLimiter("AI calls, all visitors", limit=200, window_seconds=3600)

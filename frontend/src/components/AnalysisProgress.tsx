@@ -10,6 +10,7 @@ import {
   LoaderCircle,
   Lock,
   Network,
+  QrCode,
   Radar,
   Route,
   ScanText,
@@ -23,7 +24,7 @@ import { useEffect, useState } from "react";
 // The server does not stream progress, so the percentage is estimated from typical
 // check times: it rises quickly, slows down near 95%, and only reaches 100% when
 // the result has actually arrived. The stages are the real checks Vexora runs.
-const STAGES: Record<"url" | "message", { at: number; label: string; icon: LucideIcon }[]> = {
+const STAGES: Record<"url" | "message" | "qr", { at: number; label: string; icon: LucideIcon }[]> = {
   url: [
     { at: 0, label: "Reading and normalising the link", icon: Link2 },
     { at: 8, label: "Checking threat intelligence feeds", icon: Radar },
@@ -40,12 +41,19 @@ const STAGES: Record<"url" | "message", { at: number; label: string; icon: Lucid
     { at: 62, label: "Comparing with earlier reports", icon: Network },
     { at: 78, label: "Writing the AI explanation", icon: Bot },
   ],
+  qr: [
+    { at: 0, label: "Reading what the QR code contains", icon: QrCode },
+    { at: 12, label: "Checking the payment details or link", icon: ScanText },
+    { at: 35, label: "Running the matching security checks", icon: ShieldHalf },
+    { at: 68, label: "Comparing with earlier reports", icon: Network },
+    { at: 82, label: "Writing the AI explanation", icon: Bot },
+  ],
 };
 
 // Time constant for the estimate: about 85% is reached after 2 × this many seconds.
-const TYPICAL_SECONDS = { url: 4, message: 3 };
+const TYPICAL_SECONDS = { url: 4, message: 3, qr: 3 };
 
-export default function AnalysisProgress({ mode, finished }: { mode: "url" | "message"; finished: boolean }) {
+export default function AnalysisProgress({ mode, finished }: { mode: "url" | "message" | "qr"; finished: boolean }) {
   const [elapsed, setElapsed] = useState(0);
   const reduceMotion = useReducedMotion() ?? false;
 

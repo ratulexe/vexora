@@ -39,3 +39,29 @@ Run on 7 November 2026 with live link checks and no AI key.
 | "URGENT: please reply by today" (genuine) | Low Risk | No warning signs found |
 
 Automated tests: `backend/tests/test_messages.py` covers scam and genuine messages, extraction, redaction, brand mismatch, evidence basis, and the AI layer with a fake Claude client (grounding, prompt injection, redaction, refusals and a missing key).
+
+## QR code investigation
+
+QR codes are added on the **QR code** tab: upload an image, take a photo on a phone, paste a screenshot, or try a built-in sample. The image is decoded **in the browser** with jsQR and never uploaded. Only the decoded text is sent to `POST /analyze/qr`, which is handled by `backend/app/qr_analysis.py`:
+
+| QR content | What Vexora does |
+|---|---|
+| Link | The full link analysis |
+| UPI payment (`upi://pay?...`) | Payment checks, below |
+| Wi-Fi network | Shows the network name only. The password is stripped in the browser and never stored, analysed or sent to the AI |
+| Anything else | The message analysis |
+
+UPI payment checks start from one fact: **scanning a UPI QR code can only send money, never receive it.** An ordinary shop code is Low Risk. Warnings come from scam signals:
+
+| Signal | Severity |
+|---|---|
+| The name or note promises money (refund, prize, cashback, KYC, reward) | High |
+| The payee name impersonates a brand (for example SBI) on a UPI ID that is not theirs | High |
+| The payee name claims a generic authority (a bank, customer care, police) | Medium |
+| Missing or malformed UPI ID | Medium |
+| Pre-filled amount | Low |
+| Scam patterns in the payment note (the message rules) | As in the rules |
+
+The UPI ID is also fingerprinted for correlation, so a QR code that pays the same UPI ID as an earlier scam message is linked to it.
+
+Tests in `backend/tests/test_qr.py` cover content types, the refund scam (High Risk), an ordinary shop (Low Risk), a brand using its own UPI ID (Low Risk), a generic authority name (Suspicious), Wi-Fi passwords never returned, links routed to link analysis, and a QR code linked to an earlier scam message by UPI ID. In the browser, the built-in "Fake refund UPI" sample decoded correctly and came back High Risk.

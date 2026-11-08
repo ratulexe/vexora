@@ -6,7 +6,7 @@ All automated suites and live test cases for Vexora, run on 7 November 2026. The
 
 | Suite | Command | Result |
 |---|---|---|
-| Backend (offline; no network, Claude or blockchain needed) | `cd backend && pytest` | 134 passed |
+| Backend (offline; no network, Claude or blockchain needed) | `cd backend && pytest` | 147 passed |
 | Smart contract | `cd contracts && npm test` | 10 passed |
 | Frontend | `cd frontend && npm run lint && npm run build` | Lint clean, build succeeds |
 
@@ -21,6 +21,7 @@ Backend coverage by file:
 | `test_correlation.py` | Linking by UPI ID, wording, phone number and redirect destination; weak links; expiry; no raw data stored |
 | `test_cache.py` | Expiry, copies, size limits, re-check, what is and is not cached, messages never stored |
 | `test_rate_limit.py` | Sliding windows, visitor identification, per-visitor limits, shared AI budget |
+| `test_qr.py` | QR content types; UPI refund scam, shop, brand and authority codes; Wi-Fi password privacy; routing; correlation by UPI ID |
 | `test_registry.py` | Report packages, canonical JSON, salts, refusing Low Risk reports, the endpoint, rate limits, chain failures |
 
 ## Benign test cases

@@ -1203,3 +1203,76 @@ main {
     white-space: nowrap;
   }
 }
+
+/* QR code input */
+
+.qr-drop {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 18px;
+  border: 2px dashed var(--border);
+  border-radius: 12px;
+  background: var(--bg);
+}
+
+.qr-drop:hover {
+  border-color: var(--accent);
+}
+
+@media (max-width: 560px) {
+  .qr-drop {
+    flex-direction: column;
+    text-align: center;
+  }
+}
+
+.qr-preview {
+  width: 96px;
+  height: 96px;
+  object-fit: contain;
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 4px;
+  flex-shrink: 0;
+}
+
+.qr-placeholder {
+  color: var(--muted);
+  flex-shrink: 0;
+}
+
+.qr-actions p {
+  color: var(--muted);
+  font-size: 14px;
+  margin-bottom: 10px;
+}
+
+.qr-content {
+  display: grid;
+  gap: 6px;
+  margin-top: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-2);
+  justify-items: start;
+}
+
+.qr-content code {
+  white-space: pre-wrap;
+}
+
+.tab-short {
+  display: none;
+}
+
+@media (max-width: 560px) {
+  .tab-long {
+    display: none;
+  }
+
+  .tab-short {
+    display: inline;
+  }
+}

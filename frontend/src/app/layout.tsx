@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Instrument_Serif, Roboto_Mono } from "next/font/google";
+import Script from "next/script";
 import SiteFooter from "@/components/SiteFooter";
 import SiteHeader from "@/components/SiteHeader";
 import "./globals.css";
@@ -29,7 +30,6 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" className={`${robotoMono.variable} ${instrumentSerif.variable}`} suppressHydrationWarning>
       <head>
-        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
         {/* Xmind is not in next/font's list yet, so it loads from Google Fonts directly.
@@ -41,6 +41,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         />
       </head>
       <body>
+        <Script id="theme" strategy="beforeInteractive">
+          {themeScript}
+        </Script>
         <SiteHeader />
         <main>{children}</main>
         <SiteFooter />

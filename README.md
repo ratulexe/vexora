@@ -17,6 +17,7 @@ A blockchain record proves a report's integrity and history, not that the report
 | 1. URL and website analysis | Normalisation, impersonation and typosquatting, homographs, redirects, threat intelligence, domain age, risk classification |
 | 2. TLS and web trust | Certificate verification against Mozilla's root store, names, expiry, key strength, signature algorithm, distrusted CAs, Certificate Transparency, a certificate verdict |
 | 3. Scam and message analysis | Extraction of links and contacts, 11 scam-pattern rules, link checks, brand-mismatch detection, AI explanation grounded in quotes |
+| Extension: QR code scam detection | QR images decoded in the browser; links checked, UPI payment codes checked for "scan to receive money" scams and brand impersonation, Wi-Fi passwords never sent |
 | 4. Threat correlation | Links reports by shared domains, destinations, servers, phone numbers, UPI IDs and wording |
 | 5. Website security assessment | Passive checks of HSTS, CSP, clickjacking, cookies, version disclosure and legacy TLS, each with impact and a fix |
 | 6. Decentralised threat intelligence | On-chain registry with revisions, disputes and validation, plus in-browser verification |
@@ -151,7 +152,7 @@ To run the registry on a local blockchain or deploy it to Sepolia, see [docs/web
 
 ## Disclosures
 
-- Libraries: FastAPI, Pydantic, Uvicorn, HTTPX, idna, tldextract, cryptography, certifi, Anthropic Python SDK, web3.py, pytest, Next.js, React, ethers.js, Lucide icons, Motion, Hardhat, Hardhat Toolbox
+- Libraries: FastAPI, Pydantic, Uvicorn, HTTPX, idna, tldextract, cryptography, certifi, Anthropic Python SDK, web3.py, pytest, Next.js, React, ethers.js, Lucide icons, Motion, jsQR, Hardhat, Hardhat Toolbox
 - Data sources: OpenPhish community feed, URLhaus, Google Safe Browsing, RDAP (rdap.org), crt.sh
 - Templates: `create-next-app` for the frontend
 - AI tools: Claude Code was used to generate the project skeleton and the URL analysis, message analysis, website security, correlation, caching, rate limiting and threat registry modules, and this documentation

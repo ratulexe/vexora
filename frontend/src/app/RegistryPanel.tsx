@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { registryConfigured } from "@/lib/registry";
 import type { Report } from "@/lib/report";
+import { REGISTRATION_TIMEOUT_MS, postJson } from "@/lib/request";
 import styles from "./page.module.css";
 
 const REGISTRABLE = ["Suspicious", "High Risk", "Confirmed Malicious"];
@@ -29,14 +30,7 @@ export default function RegistryPanel({ report, apiUrl }: { report: Report; apiU
     setSaving(true);
     setError(null);
     try {
-      const response = await fetch(`${apiUrl}/reports`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ report }),
-      });
-      const data = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(data.detail ?? `Request failed (${response.status})`);
-      setRegistration(data);
+      setRegistration(await postJson<Registration>(`${apiUrl}/reports`, { report }, REGISTRATION_TIMEOUT_MS));
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
     } finally {

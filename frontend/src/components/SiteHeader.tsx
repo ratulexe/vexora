@@ -1,6 +1,6 @@
 "use client";
 
-import { BadgeCheck, Code, Info, ScanSearch, ShieldCheck } from "lucide-react";
+import { BadgeCheck, Code, Info, ScanSearch } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import ThemeToggle from "./ThemeToggle";
@@ -13,7 +13,6 @@ export default function SiteHeader() {
     <header className="site-header">
       <div className="container">
         <Link href="/" className="brand" aria-label="Vexora home">
-          <ShieldCheck size={24} aria-hidden />
           Vexora
         </Link>
         <nav className="nav" aria-label="Main">

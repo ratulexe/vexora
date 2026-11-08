@@ -398,7 +398,8 @@ main {
 }
 
 .tabs {
-  display: inline-flex;
+  display: flex;
+  width: 100%;
   padding: 4px;
   gap: 4px;
   background: var(--surface-2);
@@ -408,8 +409,10 @@ main {
 }
 
 .tab {
+  flex: 1;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
   border: none;
   background: transparent;

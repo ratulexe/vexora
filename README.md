@@ -34,7 +34,7 @@ TODO: add a screenshot.
 - AI: Claude (`claude-haiku-5-5`) through the Anthropic Python SDK, for explanations only
 - TODO: database
 
-See [docs/url-analysis.md](docs/url-analysis.md), [docs/message-analysis.md](docs/message-analysis.md) and [docs/web3-registry.md](docs/web3-registry.md) for the pipelines, safety measures and test results.
+See [docs/url-analysis.md](docs/url-analysis.md), [docs/message-analysis.md](docs/message-analysis.md), [docs/correlation.md](docs/correlation.md) and [docs/web3-registry.md](docs/web3-registry.md) for the pipelines, safety measures and test results.
 
 ## Architecture
 

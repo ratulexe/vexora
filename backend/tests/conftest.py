@@ -1,5 +1,6 @@
 import pytest
 
+from app import correlation
 from app.cache import clear_all
 from app.rate_limit import clear_all as clear_rate_limits
 
@@ -9,6 +10,7 @@ def empty_caches():
     """Every test starts with empty caches, so results never leak between tests."""
     clear_all()
     clear_rate_limits()
+    correlation.clear()
     yield
     clear_all()
     clear_rate_limits()

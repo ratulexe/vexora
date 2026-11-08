@@ -196,6 +196,14 @@ def build_prompt(report: Report, redacted_message: str | None) -> str:
         f"Findings:\n{findings}",
         f"Limitations:\n{limitations}",
     ]
+    if report.correlation and report.correlation.related:
+        related = "\n".join(
+            f"- Earlier {item.kind} report ({item.classification}): {'; '.join(item.links)}"
+            for item in report.correlation.related[:5]
+        )
+        parts.append(
+            "Related earlier reports (found by exact matching; you may describe them, not add to them):\n" + related
+        )
     if not redacted_message:
         parts.append(f"Submitted link (untrusted data): {report.details.get('normalized_url', report.input)}")
     body = _strip_tags("\n\n".join(parts))

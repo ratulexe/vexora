@@ -32,6 +32,23 @@ export interface SecurityAssessment {
   limitations: string[];
 }
 
+export interface RelatedReport {
+  incident_id: string;
+  kind: string;
+  classification: string;
+  first_seen: string;
+  times_seen: number;
+  links: string[];
+  strong: boolean;
+}
+
+export interface Correlation {
+  incident_id: string | null;
+  related: RelatedReport[];
+  strong_links: number;
+  retention: string;
+}
+
 export interface Report {
   input: string;
   classification: Classification;
@@ -44,4 +61,5 @@ export interface Report {
   ai_summary?: string | null;
   from_cache?: boolean;
   security_assessment?: SecurityAssessment | null;
+  correlation?: Correlation | null;
 }

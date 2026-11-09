@@ -5,9 +5,15 @@ import Link from "next/link";
 import { useState } from "react";
 import { registryConfigured } from "@/lib/registry";
 import type { Report } from "@/lib/report";
+import CollapsibleCard from "./CollapsibleCard";
 import { REGISTRATION_TIMEOUT_MS, postJson } from "@/lib/request";
 
 const REGISTRABLE = ["Suspicious", "High Risk", "Confirmed Malicious"];
+
+/** Whether the registry panel shows for this report. */
+export function canRegister(report: Report): boolean {
+  return registryConfigured && REGISTRABLE.includes(report.classification);
+}
 
 interface Registration {
   commitment: string;
@@ -24,7 +30,7 @@ export default function RegistryPanel({ report, apiUrl }: { report: Report; apiU
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
-  if (!registryConfigured || !REGISTRABLE.includes(report.classification)) return null;
+  if (!canRegister(report)) return null;
 
   async function register() {
     setSaving(true);
@@ -56,10 +62,7 @@ export default function RegistryPanel({ report, apiUrl }: { report: Report; apiU
   }
 
   return (
-    <section className="card" style={{ marginTop: 16 }}>
-      <h3>
-        <Blocks size={18} aria-hidden /> Warn others: add to the threat registry
-      </h3>
+    <CollapsibleCard id="report-registry" icon={Blocks} title="Warn others: add to the threat registry">
       {!registration ? (
         <>
           <p className="note" style={{ marginBottom: 14 }}>
@@ -120,6 +123,6 @@ export default function RegistryPanel({ report, apiUrl }: { report: Report; apiU
           </p>
         </>
       )}
-    </section>
+    </CollapsibleCard>
   );
 }

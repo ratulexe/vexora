@@ -32,12 +32,12 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
-        {/* Xmind is not in next/font's list yet, so it loads from Google Fonts directly.
+        {/* Google Sans loads from Google Fonts directly.
             This root layout wraps every page, so the font loads site-wide (the rule targets the Pages Router). */}
         {/* eslint-disable-next-line @next/next/no-page-custom-font */}
         <link
           rel="stylesheet"
-          href="https://fonts.googleapis.com/css2?family=Xmind:wght@100..900&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Google+Sans:ital,opsz,wght@0,17..18,400..700;1,17..18,400..700&display=swap"
         />
       </head>
       <body>

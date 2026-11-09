@@ -14,7 +14,6 @@ import {
   ScanSearch,
   ShieldCheck,
   ShieldHalf,
-  Sparkles,
 } from "lucide-react";
 import { FormEvent, useState } from "react";
 import AnalysisProgress from "@/components/AnalysisProgress";
@@ -118,18 +117,12 @@ export default function Home() {
   return (
     <>
       <section className="hero container">
-        <span className="eyebrow">
-          <Sparkles size={14} aria-hidden /> AI-powered web threat detection
-        </span>
         <h1>
           Check before you click,
           <br />
           <span className="accent">pay or reply.</span>
         </h1>
-        <p className="lead">
-          Paste a suspicious link or message, or add a QR code. Vexora investigates it, shows you the evidence, and
-          tells you what to do next.
-        </p>
+        <p className="lead">Paste a link, message or QR code, and see the evidence before you trust it.</p>
         <div className="trust-row">
           <span>
             <ShieldCheck size={15} aria-hidden /> Evidence for every finding
@@ -229,8 +222,8 @@ export default function Home() {
           <p className="privacy-note">
             <Lock size={14} aria-hidden />
             {mode === "qr"
-              ? "QR images are decoded in your browser and never uploaded; only the text inside is checked. Wi-Fi passwords are never sent."
-              : "Never paste passwords, OTPs or card numbers. Phone numbers, UPI IDs and other personal details are removed before anything is sent to the AI."}
+              ? "Decoded in your browser; the image is never uploaded and Wi-Fi passwords are never sent."
+              : "Never paste passwords or OTPs. Personal details are removed before AI."}
           </p>
         </div>
 

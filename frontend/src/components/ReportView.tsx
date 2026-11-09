@@ -2,12 +2,14 @@
 
 import {
   ArrowRight,
+  Blocks,
   Bot,
   ChevronDown,
   CircleCheck,
   CircleHelp,
   Clock,
   FileSearch,
+  Gauge,
   Info,
   ListChecks,
   Lock,
@@ -22,9 +24,11 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { motion, useReducedMotion } from "motion/react";
-import type { ReactNode } from "react";
+import { useEffect, useRef, useState, type ComponentProps, type ReactNode } from "react";
 import type { Classification, Indicator, Report } from "@/lib/report";
-import RegistryPanel from "./RegistryPanel";
+import RegistryPanel, { canRegister } from "./RegistryPanel";
+import CollapsibleCard from "./CollapsibleCard";
+import TechnicalDetails from "./TechnicalDetails";
 
 type Risk = "low" | "suspicious" | "high" | "critical" | "unknown";
 
@@ -79,10 +83,25 @@ export default function ReportView({ report, apiUrl, onRecheck, busy }: Props) {
   const [firstAction, ...otherActions] = report.recommended_actions;
   const reduceMotion = useReducedMotion() ?? false;
   const alarming = verdict.risk === "high" || verdict.risk === "critical";
+  const hasTechnical = Boolean(report.details && Object.keys(report.details).length > 0);
+
+  const sections: NavSection[] = [
+    { id: "report-summary", label: "Summary", icon: Gauge },
+    { id: "report-ai", label: "AI", icon: Bot },
+    { id: "report-evidence", label: "Evidence", icon: FileSearch },
+    ...(otherActions.length > 0 ? [{ id: "report-actions", label: "What to do", icon: ShieldCheck }] : []),
+    ...(related.length > 0 ? [{ id: "report-related", label: "Related", icon: Network }] : []),
+    ...(security ? [{ id: "report-security", label: "Security", icon: ShieldHalf, opens: true }] : []),
+    ...(canRegister(report) ? [{ id: "report-registry", label: "Registry", icon: Blocks, opens: true }] : []),
+    ...(hasTechnical ? [{ id: "report-technical", label: "Technical details", icon: ScanSearch, opens: true }] : []),
+    { id: "report-limitations", label: "Limitations", icon: Info, opens: true },
+  ];
 
   return (
     <article className="report" aria-label="Investigation report">
-      <div className="verdict" data-risk={verdict.risk}>
+      <ReportNav sections={sections} />
+
+      <div id="report-summary" className="verdict report-section" data-risk={verdict.risk}>
         <div className="verdict-top">
           <motion.span
             className="verdict-icon"
@@ -100,13 +119,15 @@ export default function ReportView({ report, apiUrl, onRecheck, busy }: Props) {
           >
             <Icon size={44} aria-hidden />
           </motion.span>
-          <div>
-            <div className="verdict-label">{report.classification}</div>
-            <h2>{verdict.headline}</h2>
-            <p>{verdict.summary}</p>
-            <p className="subject">{report.input.length > 160 ? `${report.input.slice(0, 160)}...` : report.input}</p>
+          <div className="verdict-level">
+            <span className="verdict-label">Risk level</span>
+            <span className="risk-badge">{report.classification}</span>
+            <RiskMeter risk={verdict.risk} />
           </div>
         </div>
+        <h2>{verdict.headline}</h2>
+        <p>{verdict.summary}</p>
+        <p className="subject">{report.input.length > 160 ? `${report.input.slice(0, 160)}...` : report.input}</p>
         {firstAction && (
           <p className="verdict-first-action">
             <ArrowRight size={16} aria-hidden /> {firstAction}
@@ -114,13 +135,14 @@ export default function ReportView({ report, apiUrl, onRecheck, busy }: Props) {
         )}
         <div className="meta-row">
           <span>
-            <TriangleAlert size={14} aria-hidden /> {warnings.length} warning sign{warnings.length === 1 ? "" : "s"}
+            <TriangleAlert size={14} aria-hidden /> {warnings.length} warning{warnings.length === 1 ? "" : "s"}
           </span>
-          <span>
-            <ListChecks size={14} aria-hidden /> Evidence coverage: {report.confidence}
+          <span title={`Evidence coverage: ${report.confidence}`}>
+            <ListChecks size={14} aria-hidden /> {shortCoverage(report.confidence)}
           </span>
-          <span>
-            <Clock size={14} aria-hidden /> {report.from_cache ? `Saved result from ${minutesAgo(report.analysed_at)}` : `Checked ${new Date(report.analysed_at).toLocaleString()}`}
+          <span title={new Date(report.analysed_at).toLocaleString()}>
+            <Clock size={14} aria-hidden />{" "}
+            {report.from_cache ? `Saved ${minutesAgo(report.analysed_at)}` : checkedAt(report.analysed_at)}
           </span>
           {report.from_cache && (
             <button type="button" className="link-button" onClick={onRecheck} disabled={busy}>
@@ -131,7 +153,7 @@ export default function ReportView({ report, apiUrl, onRecheck, busy }: Props) {
       </div>
 
       {report.ai_summary ? (
-        <section className="card ai-card" style={{ marginTop: 16 }}>
+        <section id="report-ai" className="card ai-card report-section">
           <h3>
             <Bot size={18} aria-hidden /> AI explanation
           </h3>
@@ -141,7 +163,7 @@ export default function ReportView({ report, apiUrl, onRecheck, busy }: Props) {
           </p>
         </section>
       ) : (
-        <section className="card ai-card ai-card-missing" style={{ marginTop: 16 }}>
+        <section id="report-ai" className="card ai-card ai-card-missing report-section">
           <h3>
             <Bot size={18} aria-hidden /> AI explanation
           </h3>
@@ -153,7 +175,7 @@ export default function ReportView({ report, apiUrl, onRecheck, busy }: Props) {
         </section>
       )}
 
-      <section className="card" style={{ marginTop: 16 }}>
+      <section id="report-evidence" className="card report-section">
         <h3>
           <FileSearch size={18} aria-hidden /> Evidence
         </h3>
@@ -169,7 +191,7 @@ export default function ReportView({ report, apiUrl, onRecheck, busy }: Props) {
       </section>
 
       {otherActions.length > 0 && (
-        <section className="card" style={{ marginTop: 16 }}>
+        <section id="report-actions" className="card report-section">
           <h3>
             <ShieldCheck size={18} aria-hidden /> What to do
           </h3>
@@ -184,7 +206,7 @@ export default function ReportView({ report, apiUrl, onRecheck, busy }: Props) {
       )}
 
       {related.length > 0 && (
-        <section className="card" style={{ marginTop: 16 }}>
+        <section id="report-related" className="card report-section">
           <h3>
             <Network size={18} aria-hidden /> Related reports
           </h3>
@@ -213,10 +235,7 @@ export default function ReportView({ report, apiUrl, onRecheck, busy }: Props) {
       )}
 
       {security && (
-        <section className="card" style={{ marginTop: 16 }}>
-          <h3>
-            <ShieldHalf size={18} aria-hidden /> Website security
-          </h3>
+        <CollapsibleCard id="report-security" icon={ShieldHalf} title="Website security">
           <p className="note" style={{ marginBottom: 12 }}>
             How well <code>{security.url}</code> protects its visitors. These configuration checks do not change the
             risk level above.
@@ -261,25 +280,31 @@ export default function ReportView({ report, apiUrl, onRecheck, busy }: Props) {
               ))}
             </ul>
           </Disclosure>
-        </section>
+        </CollapsibleCard>
       )}
 
-      <RegistryPanel key={report.analysed_at} report={report} apiUrl={apiUrl} />
+      <RegistryPanel key={`registry-${report.analysed_at}`} report={report} apiUrl={apiUrl} />
 
-      <div style={{ marginTop: 16 }}>
-        <Disclosure icon={Info} title={`Limitations (${report.limitations.length})`}>
-          <ul>
-            {report.limitations.map((item) => (
-              <li key={item}>{item}</li>
-            ))}
-          </ul>
-        </Disclosure>
-        {report.details && Object.keys(report.details).length > 0 && (
-          <Disclosure icon={ScanSearch} title="Technical details">
-            <pre>{JSON.stringify(report.details, null, 2)}</pre>
-          </Disclosure>
-        )}
-      </div>
+      {hasTechnical && (
+        <TechnicalDetails
+          key={`technical-${report.analysed_at}`}
+          id="report-technical"
+          details={report.details as ComponentProps<typeof TechnicalDetails>["details"]}
+        />
+      )}
+
+      <Disclosure
+        icon={Info}
+        title={`Limitations (${report.limitations.length})`}
+        id="report-limitations"
+       
+      >
+        <ul>
+          {report.limitations.map((item) => (
+            <li key={item}>{item}</li>
+          ))}
+        </ul>
+      </Disclosure>
     </article>
   );
 }
@@ -305,14 +330,16 @@ function Disclosure({
   title,
   children,
   style,
+  id,
 }: {
   icon: LucideIcon;
   title: string;
   children: ReactNode;
   style?: React.CSSProperties;
+  id?: string;
 }) {
   return (
-    <details className="disclosure" style={style}>
+    <details className="disclosure report-section" style={style} id={id}>
       <summary>
         <Icon size={16} aria-hidden /> {title}
         <ChevronDown size={16} className="chevron" aria-hidden />
@@ -320,6 +347,109 @@ function Disclosure({
       <div className="disclosure-body">{children}</div>
     </details>
   );
+}
+
+const RISK_STEPS: { risk: Risk; label: string }[] = [
+  { risk: "low", label: "Low" },
+  { risk: "suspicious", label: "Suspicious" },
+  { risk: "high", label: "High" },
+  { risk: "critical", label: "Malicious" },
+];
+
+/** Four-step bar showing where the result sits between Low Risk and Confirmed Malicious. */
+function RiskMeter({ risk }: { risk: Risk }) {
+  const reached = RISK_STEPS.findIndex((step) => step.risk === risk);
+  return (
+    <span className="risk-meter" aria-hidden data-unknown={reached < 0}>
+      {RISK_STEPS.map((step, index) => (
+        <span key={step.risk} className="risk-step" data-on={index <= reached} />
+      ))}
+    </span>
+  );
+}
+
+interface NavSection {
+  id: string;
+  label: string;
+  icon: LucideIcon;
+  /** Open this disclosure when jumping to it. */
+  opens?: boolean;
+}
+
+/** Sticky bar under the site header that jumps to each part of the report. */
+function ReportNav({ sections }: { sections: NavSection[] }) {
+  const [active, setActive] = useState(sections[0]?.id);
+  const bar = useRef<HTMLElement>(null);
+  const ids = sections.map((section) => section.id).join(" ");
+
+  useEffect(() => {
+    const targets = ids
+      .split(" ")
+      .map((id) => document.getElementById(id))
+      .filter((element): element is HTMLElement => element !== null);
+    // The active section is the last one whose top has scrolled under the two bars.
+    function update() {
+      const passed = targets.filter((element) => element.getBoundingClientRect().top < 170);
+      const current = passed.at(-1) ?? targets[0];
+      if (current) setActive(current.id);
+    }
+    window.addEventListener("scroll", update, { passive: true });
+    return () => window.removeEventListener("scroll", update);
+  }, [ids]);
+
+  useEffect(() => {
+    const chip = bar.current?.querySelector<HTMLElement>(`[data-target="${active}"]`);
+    if (chip && bar.current) {
+      bar.current.scrollTo({ left: chip.offsetLeft - bar.current.clientWidth / 2 + chip.clientWidth / 2 });
+    }
+  }, [active]);
+
+  function jump(section: NavSection) {
+    const target = document.getElementById(section.id);
+    if (!target) return;
+    if (section.opens && target instanceof HTMLDetailsElement) target.open = true;
+    const smooth = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    target.scrollIntoView({ behavior: smooth ? "smooth" : "auto", block: "start" });
+    setActive(section.id);
+  }
+
+  return (
+    <nav className="report-nav" aria-label="Report sections" ref={bar}>
+      {sections.map((section) => {
+        const SectionIcon = section.icon;
+        return (
+          <a
+            key={section.id}
+            href={`#${section.id}`}
+            data-target={section.id}
+            aria-current={active === section.id ? "true" : undefined}
+            onClick={(event) => {
+              event.preventDefault();
+              jump(section);
+            }}
+          >
+            <SectionIcon size={14} aria-hidden /> {section.label}
+          </a>
+        );
+      })}
+    </nav>
+  );
+}
+
+/** "Medium (5 of 6 checks completed; ...)" becomes "5/6 checks"; other wording keeps just its level. */
+function shortCoverage(confidence: string): string {
+  const counts = confidence.match(/(\d+) of (\d+) checks/);
+  if (counts) return `${counts[1]}/${counts[2]} checks`;
+  const level = confidence.split(" (")[0];
+  return /^(High|Medium|Low)$/.test(level) ? `${level} coverage` : level;
+}
+
+function checkedAt(iso: string): string {
+  const date = new Date(iso);
+  const sameDay = date.toDateString() === new Date().toDateString();
+  return sameDay
+    ? date.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })
+    : date.toLocaleString([], { dateStyle: "medium", timeStyle: "short" });
 }
 
 function minutesAgo(iso: string): string {

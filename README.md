@@ -38,7 +38,7 @@ A blockchain record proves a report's integrity and history, not that the report
 
 ## Tech stack
 
-- Frontend: Next.js, TypeScript, ethers.js, Lucide icons, Motion animations, Xmind, Instrument Serif and Roboto Mono fonts (Vercel)
+- Frontend: Next.js, TypeScript, ethers.js, Lucide icons, Motion animations, Google Sans, Instrument Serif and Roboto Mono fonts (Vercel)
 - Backend: Python, FastAPI, HTTPX, cryptography, tldextract, web3.py (Render)
 - Blockchain: Solidity, Hardhat, Ethereum Sepolia testnet
 - AI: Claude (`claude-haiku-5-5`) through the Anthropic Python SDK, for explanations only

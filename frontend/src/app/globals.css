@@ -15,7 +15,7 @@
   --accent-soft: #e3f3f1;
   --focus: #2563eb;
   --shadow: 0 1px 2px rgb(16 24 40 / 6%), 0 8px 24px rgb(16 24 40 / 6%);
-  --font-display: "Xmind", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-display: "Google Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
 
   --risk-low: #157a3d;
   --risk-low-bg: #e7f6ec;
@@ -134,30 +134,20 @@ a:hover {
   border-radius: 6px;
 }
 
-/* Fixed-width text for technical details: hashes, links, labels and numbers. */
+/* Fixed-width text only where it helps: links, hashes, addresses and raw data. Prose stays in the sans font. */
 code,
 .input,
-.textarea,
-.pill,
-.tag,
-.chip,
-.eyebrow,
-.verdict-label,
-.meta-row,
 .progress-percent,
 .step-number,
 .subject,
-.stage-list,
-.result-row .label,
-.disclosure pre,
-.note {
+.disclosure pre {
   font-family: var(--font-mono), ui-monospace, monospace;
 }
 
 h1,
 h2,
 h3 {
-  font-weight: 800;
+  font-weight: 600;
   letter-spacing: -0.02em;
 }
 
@@ -249,7 +239,7 @@ main {
   align-items: center;
   gap: 8px;
   color: var(--text);
-  font-weight: 700;
+  font-weight: 600;
   font-size: 18px;
 }
 
@@ -297,9 +287,59 @@ main {
   cursor: pointer;
 }
 
-@media (max-width: 640px) {
-  .nav .nav-label {
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.menu-button {
+  display: none;
+}
+
+/* Small screens: the links move into a panel opened by the menu button. */
+@media (max-width: 720px) {
+  .menu-button {
+    display: inline-flex;
+  }
+
+  .nav {
     display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 2px;
+    padding: 8px 16px 14px;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    box-shadow: 0 12px 24px rgb(0 0 0 / 12%);
+  }
+
+  .nav[data-open="true"] {
+    display: flex;
+    animation: menu-in 160ms ease-out;
+  }
+
+  .nav a {
+    padding: 12px;
+    font-size: 15px;
+    gap: 10px;
+  }
+}
+
+@keyframes menu-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nav[data-open="true"] {
+    animation: none;
   }
 }
 
@@ -338,7 +378,7 @@ main {
 
 .hero h1 {
   font-size: clamp(40px, 7.5vw, 80px);
-  font-weight: 800;
+  font-weight: 600;
   line-height: 1.02;
   letter-spacing: -0.035em;
   margin-bottom: 14px;
@@ -658,6 +698,9 @@ main {
 /* Report */
 
 .report {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
   max-width: 760px;
   margin: 24px auto 0;
 }
@@ -697,7 +740,102 @@ main {
 .verdict-top {
   display: flex;
   gap: 16px;
+  align-items: center;
+}
+
+.verdict-level {
+  display: flex;
+  flex-direction: column;
   align-items: flex-start;
+  gap: 6px;
+}
+
+/* The risk level, shown as a solid badge so it reads first. */
+.risk-badge {
+  display: inline-block;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: var(--risk);
+  color: var(--bg);
+  font-family: var(--font-display), system-ui, sans-serif;
+  font-size: clamp(17px, 3.6vw, 20px);
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  line-height: 1.2;
+}
+
+.risk-meter {
+  display: flex;
+  gap: 4px;
+}
+
+.risk-step {
+  width: 30px;
+  height: 6px;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--risk) 22%, transparent);
+}
+
+.risk-step[data-on="true"] {
+  background: var(--risk);
+}
+
+.risk-meter[data-unknown="true"] .risk-step {
+  background: none;
+  border: 1px dashed var(--risk);
+}
+
+.verdict > h2 {
+  margin-top: 16px;
+}
+
+/* Section bar: sticks under the site header and jumps to each part of the report. */
+.report-nav {
+  position: sticky;
+  top: 60px;
+  z-index: 5;
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  margin: 0 -16px -4px;
+  padding: 10px 16px;
+  background: color-mix(in srgb, var(--bg) 88%, transparent);
+  backdrop-filter: blur(10px);
+}
+
+.report-nav::-webkit-scrollbar {
+  display: none;
+}
+
+.report-nav a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  white-space: nowrap;
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.report-nav a:hover {
+  color: var(--text);
+  text-decoration: none;
+}
+
+.report-nav a[aria-current="true"] {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.report-section {
+  scroll-margin-top: 124px;
 }
 
 .verdict-icon {
@@ -1333,4 +1471,196 @@ main {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* Technical details: one tab per check, values as readable rows. */
+.detail-tabs {
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  border-bottom: 1px solid var(--border);
+}
+
+.detail-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.detail-tabs button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  white-space: nowrap;
+  padding: 9px 12px;
+  margin-bottom: -1px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: none;
+  color: var(--muted);
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.detail-tabs button:hover {
+  color: var(--text);
+}
+
+.detail-tabs button[aria-selected="true"] {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+  font-weight: 600;
+}
+
+.detail-panel {
+  padding-top: 14px;
+}
+
+.detail-panel h4 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 10px;
+  font-size: 15px;
+}
+
+.detail-panel h4 svg {
+  color: var(--accent);
+}
+
+.kv-list {
+  margin: 0;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--bg);
+}
+
+.kv-row {
+  display: grid;
+  grid-template-columns: minmax(120px, 36%) 1fr;
+  gap: 12px;
+  padding: 9px 12px;
+}
+
+.kv-row + .kv-row {
+  border-top: 1px solid var(--border);
+}
+
+.kv-row dt {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.kv-row dd {
+  margin: 0;
+  min-width: 0;
+}
+
+.kv-value,
+.kv-chips li {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
+.kv-empty {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.kv-bool {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--risk-low);
+}
+
+.kv-bool[data-value="false"] {
+  color: var(--muted);
+}
+
+.kv-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.kv-chips li {
+  padding: 2px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+}
+
+.kv-items {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.kv-item-label {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+/* Nested groups sit inside a row, so drop their outer frame. */
+.kv-row .kv-list {
+  background: var(--surface);
+}
+
+@media (max-width: 560px) {
+  .kv-row {
+    grid-template-columns: 1fr;
+    gap: 2px;
+  }
+}
+
+/* Report cards that fold away; secondary sections start folded on phones. */
+.collapsible summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.collapsible summary::-webkit-details-marker {
+  display: none;
+}
+
+.collapsible summary h3 {
+  margin: 0;
+}
+
+.collapsible summary .chevron {
+  flex-shrink: 0;
+  color: var(--muted);
+  transition: transform 0.2s ease;
+}
+
+.collapsible[open] summary .chevron {
+  transform: rotate(180deg);
+}
+
+.collapsible-body {
+  padding-top: 12px;
+}
+
+.collapsible:not([open]) {
+  padding-block: 14px;
 }

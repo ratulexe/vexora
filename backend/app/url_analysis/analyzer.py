@@ -1,6 +1,7 @@
 """Runs every URL check and combines them into one report."""
 
 from concurrent.futures import ThreadPoolExecutor
+from urllib.parse import urljoin
 from datetime import datetime, timezone
 
 from ..cache import TTLCache
@@ -80,9 +81,17 @@ def analyze_url(raw: str) -> Report:
             fetch_future = pool.submit(fetch_redirect_chain, url.url)
             tls_future = pool.submit(check_tls, url.host)
             fetch = fetch_future.result()
-            redirect_check, final = analyze_redirects(url, fetch)
-            site_reached = fetch.final_status is not None
             tls_result = tls_future.result()
+            if fetch.dns_failed and not fetch.hops and not url.subdomain and not url.is_ip:
+                # Some sites only answer on www (incometax.gov.in), as browsers find when typed.
+                www_host = f"www.{url.host}"
+                retry = fetch_redirect_chain(url.url.replace(f"//{url.host}", f"//{www_host}", 1))
+                if not retry.dns_failed:
+                    fetch = retry
+                    tls_result = check_tls(www_host)
+                    limitations.append(f"{url.host} has no address of its own, so {www_host} was checked instead.")
+            redirect_check, final = analyze_redirects(url, fetch)
+            site_reached = fetch.final_status is not None or _reached_own_domain(url, fetch)
             checks += [redirect_check, tls_result]
 
             # Does the plain-HTTP address redirect to HTTPS? (Module 5)
@@ -197,10 +206,28 @@ def analyze_redirects(url: NormalizedUrl, fetch: FetchResult) -> tuple[CheckResu
     if final and final.registered_domain != url.registered_domain and not _same_brand(url, final):
         add(
             "Redirects to a different domain",
-            Severity.MEDIUM,
-            f"{url.host} sends visitors to {final.host}. Chain: {' -> '.join(hosts)}.",
+            Severity.LOW,
+            f"{url.host} sends visitors to {final.host}. Chain: {' -> '.join(hosts)}. "
+            "The destination is checked separately.",
         )
     return check, final
+
+
+def _reached_own_domain(url: NormalizedUrl, fetch: FetchResult) -> bool:
+    """The site answered, and only a redirect within its own domain could not be followed.
+
+    For example irctc.co.in answers with a redirect to www.irctc.co.in, which then stalls.
+    The site was reached and every host in the chain was checked, so this is not missing evidence.
+    """
+    if fetch.blocked or not fetch.hops or fetch.hops[-1].status is None:
+        return False
+    last = fetch.hops[-1]
+    target = urljoin(last.url, last.location) if last.location else last.url
+    try:
+        hosts = [normalize_url(hop.url) for hop in fetch.hops] + [normalize_url(target)]
+    except InvalidUrl:
+        return False
+    return all(host.registered_domain == url.registered_domain for host in hosts)
 
 
 def _same_brand(first: NormalizedUrl, second: NormalizedUrl) -> bool:

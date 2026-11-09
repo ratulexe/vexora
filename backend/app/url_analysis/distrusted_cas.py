@@ -55,8 +55,9 @@ DISTRUSTED_CAS: tuple[DistrustedCa, ...] = (
     ),
     DistrustedCa(
         name="Entrust",
-        match=("entrust",),
-        reason="Chrome and Mozilla distrust Entrust TLS certificates issued after November 2024.",
+        # Entrust's own roots only: Entrust now also issues through Sectigo's roots, which are trusted.
+        match=("entrust root certification authority",),
+        reason="Chrome and Mozilla distrust TLS certificates from Entrust's roots issued after November 2024.",
         source="Google Security Blog announcement (June 2024)",
         issued_after=date(2024, 11, 12),
     ),

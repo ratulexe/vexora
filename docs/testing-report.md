@@ -6,7 +6,7 @@ All automated suites and live test cases for Vexora, run on 7 November 2026. The
 
 | Suite | Command | Result |
 |---|---|---|
-| Backend (offline; no network, Claude or blockchain needed) | `cd backend && pytest` | 147 passed |
+| Backend (offline; no network, Claude or blockchain needed) | `cd backend && pytest` | 162 passed |
 | Smart contract | `cd contracts && npm test` | 10 passed |
 | Frontend | `cd frontend && npm run lint && npm run build` | Lint clean, build succeeds |
 
@@ -35,6 +35,26 @@ Backend coverage by file:
 | Genuine HDFC OTP message: "Do not share it with anyone" | Low Risk | Low Risk; no rules triggered |
 | Genuine meeting message with a GitHub link | Low Risk | Low Risk; no warning signs found |
 | "URGENT: please reply by today, the venue booking closes tonight." | Low Risk | Low Risk; urgency alone is only Low severity |
+
+## Popular sites (false-positive sweep)
+
+39 well-known sites were checked on 9 November 2026 the way the live server connects (IPv4 only), four times in a row. All 39 were Low Risk every time:
+
+facebook.com, instagram.com, whatsapp.com, google.com, youtube.com, amazon.in, flipkart.com, wikipedia.org, x.com, twitter.com, linkedin.com, microsoft.com, apple.com, netflix.com, reddit.com, yahoo.com, bing.com, onlinesbi.sbi, sbi.co.in, hdfcbank.com, icicibank.com, axisbank.com, kotak.com, paytm.com, phonepe.com, incometax.gov.in, uidai.gov.in, india.gov.in, irctc.co.in, zomato.com, swiggy.com, myntra.com, openai.com, anthropic.com, cloudflare.com, github.com, stackoverflow.com, bbc.com, nytimes.com.
+
+Before these fixes, facebook.com was Inconclusive on the live site and the first sweep found 11 more wrong results. Each cause was fixed:
+
+| Cause | Sites affected | Fix |
+|---|---|---|
+| IPv6 address tried first; the server has no IPv6 | facebook.com, instagram.com | IPv4 first, then fall back to other addresses |
+| `.bank.in` (RBI's restricted bank domain) not in the suffix list | onlinesbi.sbi (High Risk) | `.bank.in` and `.fin.in` added as suffixes; official `.bank.in` domains added |
+| Redirect to another domain rated Medium | twitter.com, hdfcbank.com, icicibank.com, axisbank.com | Now Low; the destination is checked separately |
+| Any issuer named "Entrust" treated as distrusted | sbi.co.in | Only Entrust's own roots; Entrust certificates under Sectigo's root are trusted |
+| Bot protection stalls non-browser clients | zomato.com, myntra.com | Browser user agent and headers |
+| Site answers, then a redirect within its own domain stalls | irctc.co.in, kotak.com | Counted as reached; the stall is listed as a limitation |
+| Domain has no address without `www.` | incometax.gov.in | `www.` tried, and the report says so |
+
+A site that is really down, or blocks every automated check, is still Inconclusive. That is deliberate: Vexora does not call a site Low Risk without evidence.
 
 ## Suspicious test cases
 

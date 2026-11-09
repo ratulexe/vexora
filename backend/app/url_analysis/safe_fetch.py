@@ -19,7 +19,14 @@ ALLOWED_PORTS = {80, 443}
 MAX_REDIRECTS = 5
 TOTAL_BUDGET_SECONDS = 15
 TIMEOUT = httpx.Timeout(5.0)
-USER_AGENT = "Mozilla/5.0 (compatible; VexoraScanner/0.1; +https://github.com/ratulexe/vexora)"
+# How long to wait for each address before trying the next one.
+CONNECT_PROBE_SECONDS = 3.0
+# A browser user agent: some sites (zomato.com, myntra.com) stall requests from anything else,
+# which would leave genuine sites Inconclusive. Page content is still never read.
+USER_AGENT = (
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) "
+    "Chrome/130.0.0.0 Safari/537.36"
+)
 REDIRECT_STATUSES = {301, 302, 303, 307, 308}
 NAT64_PREFIX = ipaddress.ip_network("64:ff9b::/96")
 # Response headers kept for the website security assessment. Page content is never read.
@@ -70,11 +77,30 @@ def resolve_public_ips(host: str) -> list[str]:
     except (socket.gaierror, UnicodeError) as error:
         raise DnsFailure(f"{host} does not resolve") from error
 
-    ips = sorted({info[4][0] for info in infos})
+    # IPv4 first: many hosts (Render included) cannot make IPv6 connections, and sites such as
+    # facebook.com publish both. Sorting the addresses as text put IPv6 first for some of them.
+    ips = sorted({info[4][0] for info in infos}, key=lambda ip: (ipaddress.ip_address(ip).version, ip))
     blocked = [ip for ip in ips if not is_public_address(ip)]
     if blocked:
         raise BlockedDestination(f"{host} resolves to a non-public address ({', '.join(blocked)})")
     return ips
+
+
+def first_reachable(ips: list[str], port: int) -> str:
+    """The first address that accepts a connection on the port, trying each in order.
+
+    Every address has already passed the public-address check, so falling back to another
+    one is safe. If none answer, the first is returned and the real request reports the error.
+    """
+    if len(ips) == 1:
+        return ips[0]
+    for ip in ips:
+        try:
+            with socket.create_connection((ip, port), timeout=CONNECT_PROBE_SECONDS):
+                return ip
+        except OSError:
+            continue
+    return ips[0]
 
 
 @dataclass
@@ -122,7 +148,11 @@ def fetch_redirect_chain(url: str) -> FetchResult:
         timeout=TIMEOUT,
         follow_redirects=False,
         trust_env=False,
-        headers={"User-Agent": USER_AGENT, "Accept": "text/html,*/*;q=0.8"},
+        headers={
+            "User-Agent": USER_AGENT,
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            "Accept-Language": "en-IN,en;q=0.9",
+        },
     ) as client:
         for _ in range(MAX_REDIRECTS + 1):
             if time.monotonic() > deadline:
@@ -130,7 +160,7 @@ def fetch_redirect_chain(url: str) -> FetchResult:
                 return result
             try:
                 scheme, host, port = check_destination(current)
-                ip = resolve_public_ips(host)[0]
+                ip = first_reachable(resolve_public_ips(host), port)
             except BlockedDestination as error:
                 result.blocked = str(error)
                 return result

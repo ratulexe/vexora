@@ -167,9 +167,16 @@ def test_wildcard_matches_only_one_level():
 
 def test_distrusted_ca_matching_respects_dates():
     assert find_distrusted(["DigiNotar Public CA"], date(2011, 1, 1)).name == "DigiNotar"
-    assert find_distrusted(["Entrust Certification Authority - L1K"], date(2024, 1, 1)) is None
-    assert find_distrusted(["Entrust Certification Authority - L1K"], date(2025, 1, 1)).name == "Entrust"
+    entrust_chain = ["Entrust Certification Authority - L1K", "Entrust Root Certification Authority - G2"]
+    assert find_distrusted(entrust_chain, date(2024, 1, 1)) is None
+    assert find_distrusted(entrust_chain, date(2025, 1, 1)).name == "Entrust"
     assert find_distrusted(["Let's Encrypt R11"], date(2025, 1, 1)) is None
+
+
+def test_entrust_certificates_under_sectigo_roots_are_trusted():
+    # sbi.co.in (2026): Entrust-branded, but chained to Sectigo's root, which browsers trust.
+    chain = ["Entrust DV TLS Issuing RSA CA 2", "Entrust Limited", "Sectigo Public Server Authentication Root R46"]
+    assert find_distrusted(chain, date(2026, 6, 16)) is None
 
 
 # Classification
@@ -249,3 +256,60 @@ def test_first_reachable_returns_the_first_address_when_none_answer(monkeypatch)
 
     monkeypatch.setattr(safe_fetch.socket, "create_connection", connect)
     assert safe_fetch.first_reachable(["93.184.215.14", "93.184.215.15"], 443) == "93.184.215.14"
+
+
+# Genuine sites that moved domains or sit behind bot protection
+
+@pytest.mark.parametrize(
+    "url, registered",
+    [
+        ("https://www.hdfc.bank.in/", "hdfc.bank.in"),
+        ("https://onlinesbi.sbi.bank.in/", "sbi.bank.in"),
+        ("https://www.kotak.bank.in/en/home.html", "kotak.bank.in"),
+        ("https://example.fin.in/", "example.fin.in"),
+    ],
+)
+def test_bank_in_and_fin_in_are_public_suffixes(url, registered):
+    assert normalize_url(url).registered_domain == registered
+
+
+@pytest.mark.parametrize("url", ["https://www.hdfc.bank.in/", "https://onlinesbi.sbi.bank.in/", "https://www.axis.bank.in/"])
+def test_official_bank_in_domains_are_not_flagged(url):
+    result = check_domain(normalize_url(url))
+    assert not [item for item in result.indicators if item.severity.value in ("High", "Critical", "Medium")]
+
+
+def test_redirect_to_another_domain_is_only_low_severity():
+    from app.url_analysis.analyzer import analyze_redirects
+    from app.url_analysis.safe_fetch import FetchResult, Hop
+
+    fetch = FetchResult(
+        hops=[Hop(url="https://twitter.com/", status=301, ip="1.1.1.1", location="https://x.com/"),
+              Hop(url="https://x.com/", status=200, ip="1.1.1.2")],
+        final_url="https://x.com/",
+        final_status=200,
+    )
+    check, final = analyze_redirects(normalize_url("https://twitter.com"), fetch)
+    assert final.registered_domain == "x.com"
+    assert [item.severity.value for item in check.indicators if item.title == "Redirects to a different domain"] == ["Low"]
+
+
+def _stalled_fetch(location):
+    from app.url_analysis.safe_fetch import FetchResult, Hop
+
+    return FetchResult(
+        hops=[Hop(url="https://irctc.co.in/", status=301, ip="1.1.1.1", location=location)],
+        error="Timed out connecting to the next host",
+    )
+
+
+def test_site_that_answered_before_a_same_domain_redirect_stalled_counts_as_reached():
+    from app.url_analysis.analyzer import _reached_own_domain
+
+    assert _reached_own_domain(normalize_url("https://irctc.co.in"), _stalled_fetch("https://www.irctc.co.in/"))
+
+
+def test_stalled_redirect_to_another_domain_does_not_count_as_reached():
+    from app.url_analysis.analyzer import _reached_own_domain
+
+    assert not _reached_own_domain(normalize_url("https://irctc.co.in"), _stalled_fetch("https://evil.example/"))

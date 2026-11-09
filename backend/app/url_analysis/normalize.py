@@ -11,7 +11,11 @@ import tldextract
 # Use the bundled public suffix list so the server never downloads it at startup.
 # Private suffixes (github.io, vercel.app, ...) are on, because each site under them
 # has a different owner.
-_extract = tldextract.TLDExtract(suffix_list_urls=(), include_psl_private_domains=True)
+# .bank.in and .fin.in are India's restricted domains for banks and financial firms (RBI, 2025).
+# They are newer than the bundled list, so without them "hdfc.bank.in" would be read as "hdfc" on "bank.in".
+_extract = tldextract.TLDExtract(
+    suffix_list_urls=(), include_psl_private_domains=True, extra_suffixes=("bank.in", "fin.in")
+)
 
 _OBFUSCATED_IP = re.compile(r"(0x[0-9a-f]+|\d+)(\.(0x[0-9a-f]+|\d+)){0,3}")
 

@@ -14,6 +14,7 @@ from app.url_analysis.distrusted_cas import find_distrusted
 from app.url_analysis.domain_checks import check_domain
 from app.url_analysis.normalize import InvalidUrl, normalize_url
 from app.url_analysis.safe_fetch import BlockedDestination, check_destination, is_public_address, resolve_public_ips
+from app.url_analysis import safe_fetch
 from app.url_analysis.tls_check import _describe, _name_matches
 
 
@@ -199,3 +200,52 @@ def test_low_and_info_indicators_do_not_raise_risk():
 def test_no_evidence_is_inconclusive_not_safe():
     assert classify([], False, site_reached=False, threat_intel_available=True) == Classification.INCONCLUSIVE
     assert classify([], False, site_reached=True, threat_intel_available=False) == Classification.INCONCLUSIVE
+
+
+def _fake_addresses(*ips):
+    return lambda host, port, type=0: [(None, None, None, "", (ip, 0)) for ip in ips]
+
+
+def test_ipv4_addresses_come_before_ipv6(monkeypatch):
+    # facebook.com publishes both; Render cannot reach IPv6, so IPv4 must be tried first.
+    monkeypatch.setattr(
+        safe_fetch.socket, "getaddrinfo", _fake_addresses("2a03:2880:f18a:188:face:b00c:0:25de", "57.144.94.1")
+    )
+    assert resolve_public_ips("facebook.com") == ["57.144.94.1", "2a03:2880:f18a:188:face:b00c:0:25de"]
+
+
+def test_first_reachable_falls_back_to_the_next_address(monkeypatch):
+    tried = []
+
+    class Connection:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            return False
+
+    def connect(address, timeout):
+        tried.append(address[0])
+        if address[0] == "2001:db8::1":
+            raise OSError("Network is unreachable")
+        return Connection()
+
+    monkeypatch.setattr(safe_fetch.socket, "create_connection", connect)
+    assert safe_fetch.first_reachable(["2001:db8::1", "93.184.215.14"], 443) == "93.184.215.14"
+    assert tried == ["2001:db8::1", "93.184.215.14"]
+
+
+def test_first_reachable_skips_the_probe_for_a_single_address(monkeypatch):
+    def connect(address, timeout):
+        raise AssertionError("should not probe a single address")
+
+    monkeypatch.setattr(safe_fetch.socket, "create_connection", connect)
+    assert safe_fetch.first_reachable(["93.184.215.14"], 443) == "93.184.215.14"
+
+
+def test_first_reachable_returns_the_first_address_when_none_answer(monkeypatch):
+    def connect(address, timeout):
+        raise OSError("refused")
+
+    monkeypatch.setattr(safe_fetch.socket, "create_connection", connect)
+    assert safe_fetch.first_reachable(["93.184.215.14", "93.184.215.15"], 443) == "93.184.215.14"

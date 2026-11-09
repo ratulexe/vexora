@@ -18,7 +18,7 @@ from ..cache import TTLCache, cache_completed_checks
 from ..schemas import Severity
 from .common import CheckResult, indicator
 from .distrusted_cas import find_distrusted
-from .safe_fetch import BlockedDestination, DnsFailure, resolve_public_ips
+from .safe_fetch import BlockedDestination, DnsFailure, first_reachable, resolve_public_ips
 
 SOURCE = "Vexora TLS analysis"
 TIMEOUT_SECONDS = 6
@@ -44,7 +44,7 @@ def check_tls(host: str, prefix: str = "") -> CheckResult:
         result.indicators.append(indicator(prefix + title, severity, evidence, SOURCE))
 
     try:
-        ip = resolve_public_ips(host)[0]
+        ip = first_reachable(resolve_public_ips(host), 443)
     except (BlockedDestination, DnsFailure) as error:
         result.limitations.append(f"TLS not checked: {error}.")
         return result

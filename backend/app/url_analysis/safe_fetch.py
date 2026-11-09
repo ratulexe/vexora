@@ -19,6 +19,8 @@ ALLOWED_PORTS = {80, 443}
 MAX_REDIRECTS = 5
 TOTAL_BUDGET_SECONDS = 15
 TIMEOUT = httpx.Timeout(5.0)
+# How long to wait for each address before trying the next one.
+CONNECT_PROBE_SECONDS = 3.0
 USER_AGENT = "Mozilla/5.0 (compatible; VexoraScanner/0.1; +https://github.com/ratulexe/vexora)"
 REDIRECT_STATUSES = {301, 302, 303, 307, 308}
 NAT64_PREFIX = ipaddress.ip_network("64:ff9b::/96")
@@ -70,11 +72,30 @@ def resolve_public_ips(host: str) -> list[str]:
     except (socket.gaierror, UnicodeError) as error:
         raise DnsFailure(f"{host} does not resolve") from error
 
-    ips = sorted({info[4][0] for info in infos})
+    # IPv4 first: many hosts (Render included) cannot make IPv6 connections, and sites such as
+    # facebook.com publish both. Sorting the addresses as text put IPv6 first for some of them.
+    ips = sorted({info[4][0] for info in infos}, key=lambda ip: (ipaddress.ip_address(ip).version, ip))
     blocked = [ip for ip in ips if not is_public_address(ip)]
     if blocked:
         raise BlockedDestination(f"{host} resolves to a non-public address ({', '.join(blocked)})")
     return ips
+
+
+def first_reachable(ips: list[str], port: int) -> str:
+    """The first address that accepts a connection on the port, trying each in order.
+
+    Every address has already passed the public-address check, so falling back to another
+    one is safe. If none answer, the first is returned and the real request reports the error.
+    """
+    if len(ips) == 1:
+        return ips[0]
+    for ip in ips:
+        try:
+            with socket.create_connection((ip, port), timeout=CONNECT_PROBE_SECONDS):
+                return ip
+        except OSError:
+            continue
+    return ips[0]
 
 
 @dataclass
@@ -130,7 +151,7 @@ def fetch_redirect_chain(url: str) -> FetchResult:
                 return result
             try:
                 scheme, host, port = check_destination(current)
-                ip = resolve_public_ips(host)[0]
+                ip = first_reachable(resolve_public_ips(host), port)
             except BlockedDestination as error:
                 result.blocked = str(error)
                 return result
